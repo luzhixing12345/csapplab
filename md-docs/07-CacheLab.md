@@ -1149,6 +1149,12 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 }
 ```
 
+最后的实验结果直接用 driver.py 运行就行, 这个需要 python2, 如果没有的话可以先装一个
+
+```bash
+sudo apt install python
+```
+
 ```bash
 $ ./driver.py
 Part A: Testing cache simulator
@@ -1179,6 +1185,8 @@ Trans perf 64x64           8.0         8        1027
 Trans perf 61x67          10.0        10        1905
           Total points    53.0        53
 ```
+
+> 最后的 misses 的数量会稍微多几次, 这个没有什么影响, 大概是运行期间的一些无关的 miss
 
 ## 参考
 

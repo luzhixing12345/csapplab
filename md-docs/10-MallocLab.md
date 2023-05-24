@@ -4,7 +4,7 @@
 
 malloc lab是设计一个自己的用于分配和管理内存的malloc free的实验
 
-在文件夹内可以看到两个short1-bal.rep short2-bal.rep的测试文件, 但这里的测试文件并不全, 在编译之前首先需要添加 `traces/` 文件夹, 可以clone[仓库](https://github.com/Ethan-Yan27/CSAPP-Labs)然后将其malloclab的traces文件夹移动到本实验的根目录, 然后修改config.h中的路径
+在文件夹内可以看到两个short1-bal.rep short2-bal.rep的测试文件, 但这里的测试文件并不全, 在编译之前首先需要添加 `traces/` 文件夹, 可以在[这里](https://github.com/luzhixing12345/csapplab/tree/main/10_malloclab/traces)找到 traces, 然后将移动到本实验的根目录, 然后修改config.h中的路径
 
 ```c
 #define TRACEDIR "traces/"
@@ -26,6 +26,8 @@ malloc lab是设计一个自己的用于分配和管理内存的malloc free的�
 ```
 
 make编译即可
+
+这个实验该说不说还是 debug 了很久很久的, segmentation fault 还是太不友好了呜呜
 
 ## 前置知识
 

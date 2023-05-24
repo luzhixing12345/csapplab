@@ -91,16 +91,6 @@ void rotate(int dim, pixel* src, pixel* dst)
 }
 ```
 
-```bash
-Rotate: Version = rotate() function:
-Dim             64      128     256     512     1024    Mean
-Your CPEs       2.3     2.2     2.2     2.3     3.3
-Baseline CPEs   14.7    40.1    46.4    65.9    94.5
-Speedup         6.5     18.0    21.0    28.8    28.7    18.2
-```
-
-最后可以得到18.2/50分,不是很好提升了...
-
 ### smooth
 
 对于smooth函数的优化思路就比较明显了,首先每次都调用avg算一个3x3没必要,用一个变量保存移动的时候仅更新6个即可
@@ -205,42 +195,43 @@ void smooth(int dim, pixel* src, pixel* dst)
 
 这里其实还可以用三个unsigned int变量记录sum_r,sum_g, sum_b,然后每次移动的时候只更新最右侧三个和减去最左侧三个
 
+> 这里还判断了一下 Teamname 不能是 bovik, 改成 bovik1
+
 ```bash
-root@da1811a84ddc:~/csapp/08Performance Lab/perflab# ./driver
 Teamname: bovik1
 Member 1: Harry Q. Bovik
 Email 1: bovik@nowhere.edu
 
 Rotate: Version = naive_rotate: Naive baseline implementation:
 Dim             64      128     256     512     1024    Mean
-Your CPEs       2.9     4.3     6.5     10.2    11.4
+Your CPEs       1.1     1.2     3.0     4.5     6.1
 Baseline CPEs   14.7    40.1    46.4    65.9    94.5
-Speedup         5.1     9.3     7.1     6.5     8.3     7.1
+Speedup         13.9    32.7    15.6    14.8    15.6    17.5
 
 Rotate: Version = rotate: Current working version:
 Dim             64      128     256     512     1024    Mean
-Your CPEs       2.3     2.2     2.2     2.3     3.2
+Your CPEs       0.8     0.8     0.8     0.9     1.2
 Baseline CPEs   14.7    40.1    46.4    65.9    94.5
-Speedup         6.5     17.9    20.9    28.8    29.2    18.3
+Speedup         18.4    48.8    56.2    71.7    78.1    49.0
 
 Smooth: Version = smooth: Current working version:
 Dim             32      64      128     256     512     Mean
-Your CPEs       15.3    15.7    16.1    15.8    15.9
+Your CPEs       7.5     7.7     7.7     7.7     7.8
 Baseline CPEs   695.0   698.0   702.0   717.0   722.0
-Speedup         45.5    44.5    43.7    45.4    45.4    44.9
+Speedup         93.1    90.3    90.7    92.8    93.1    92.0
 
 Smooth: Version = naive_smooth: Naive baseline implementation:
 Dim             32      64      128     256     512     Mean
-Your CPEs       60.2    50.7    61.6    60.4    60.9
+Your CPEs       23.9    21.8    21.8    22.0    21.9
 Baseline CPEs   695.0   698.0   702.0   717.0   722.0
-Speedup         11.5    13.8    11.4    11.9    11.9    12.1
+Speedup         29.1    32.0    32.2    32.6    32.9    31.8
 
 Summary of Your Best Scores:
-  Rotate: 18.3 (rotate: Current working version)
-  Smooth: 44.9 (smooth: Current working version)
+  Rotate: 49.0 (rotate: Current working version)
+  Smooth: 92.0 (smooth: Current working version)
 ```
 
-最后得分44.9/50
+就马马虎虎吧, 没什么想说的了
 
 ## 参考
 
