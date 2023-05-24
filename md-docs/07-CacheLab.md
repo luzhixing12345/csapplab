@@ -25,18 +25,6 @@ valgrind --log-fd=1 --tool=lackey -v --trace-mem=yes ls -l
 
 在输出的信息之中,I表示 instruction load, L表示 data load, S 表示data store, M表示data modify,接着是一个64位地址和操作的字节数
 
-这里有一个比较恶心的点是直接使用make然后make clean是存在问题的,因为在Makefile中为了提交作业将最后的文件打包成`$(USER)-handin.tar`,但实际上USER变量还没有定义,所以生成的文件是 `-handin.tar`,那么在执行make clean使用rm命令就会报错解析不了-h
-
-一个比较好的解决办法是修改Makefile文件定义USER变量,或者每次执行make带着USER变量,比如 `make USER=123`
-
-```Makefile
-USER = user
-
-all: csim test-trans tracegen
-        # Generate a handin tar file each time you compile
-        -tar -cvf ${USER}-handin.tar  csim.c trans.c
-```
-
 ### Part A: Writing a Cache Simulator
 
 Part A是实现一个简单的cache,模拟`csim-ref`的输入和输出格式,参数sEb也都是书中介绍过的
