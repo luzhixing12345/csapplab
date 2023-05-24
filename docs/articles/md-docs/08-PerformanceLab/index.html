@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        Document
+    </title>
+    <link rel='stylesheet' href=../../../css/prism.css /><link rel='stylesheet' href=../../../css/index.css />
+    <link rel="icon" href="https://raw.githubusercontent.com/learner-lu/picbed/master/logo.png">
+</head>
+
+<body class="light">
+    <div class="header-navigator"><ul><li><a href="#h1-0">PerformanceLab</a><ul><li><a href="#h2-1">前言</a></li></ul><ul><li><a href="#h2-2">实验背景</a></li></ul><ul><li><a href="#h2-3">实验报告</a><ul><li><a href="#h3-4">rotate</a></li></ul><ul><li><a href="#h3-5">smooth</a></li></ul></li></ul><ul><li><a href="#h2-6">参考</a></li></ul></li></ul></div><div class='markdown-body'><h1 id="h1-0">PerformanceLab</h1><h2 id="h2-1">前言</h2><p>performance lab 实验用于理解一些程序中的优化手段, 但是本身这个实验设计的比较粗糙, 甚至没有一个很好的评判标准, 程序使用的计时器甚至每次运行得分都会有所波动...</p><p>看了些其他的文章也都说这个实验已经被Cachelab取代了,不过这个实验本身并不算很难,简单的花一点时间就可以搞定</p><blockquote><p>做下来感觉价值确实不是很高</p></blockquote><h2 id="h2-2">实验背景</h2><p>实验pdf里写的比较清晰了,需要完成kernels.c里面的两个函数rotate和smooth,是两个图像处理里面十分常用的函数</p><p>图片是一个NxN的矩阵,其中rotate函数就是将图片逆时针旋转九十度</p><p><img src="https://raw.githubusercontent.com/learner-lu/picbed/master/20230203204608.png" alt="20230203204608"></p><p>smooth函数就是计算每个像素块3x3范围内的平均值</p><p><img src="https://raw.githubusercontent.com/learner-lu/picbed/master/20230203204709.png" alt="20230203204709"></p><p>在kernels.c中给出了两个naive的函数实现,但明显存在不足之处以及可以优化的地方</p><p>本身在优化里面课本上给出了几种常见的程序优化方式</p><ul><li>代码移动(code motion):例如将for循环中的a.size()提取出来</li></ul><ul><li>循环展开(loop unrolling): 减少了索引计算的次数(i++)和条件分支的判断次数(i<100),同时在cache映射方面也会有好处</li></ul><ul><li>分块(blocking):cachelab的核心部分,充分利用缓存,减少访存次数和miss次数</li></ul><ul><li>消除内存引用: 例如用一个temp变量计算和,然后再赋值给A[dst]而不是每次都A[dst]+=value</li></ul><ul><li>累积变量和重新组合，提高指令并行性</li></ul><ul><li>功能性风格重写条件操作，即用三元运算符</li></ul><p>两个函数分别50分满分</p><h2 id="h2-3">实验报告</h2><h3 id="h3-4">rotate</h3><p>很显然src dst两个矩阵的旋转变换分块的方式要好很多,分块之后再循环展开,其他的优化方法确实这里也用不上</p><p>参考<a href="https://segmentfault.com/a/1190000038753527" target="_blank">分块优化思路</a>,从8x8分块优化到32x32,然后再展开</p><pre><code class="language-c">void rotate(int dim, pixel* src, pixel* dst)
+{
+    int i,j;
+    int dst_base = (dim-1)*dim;
+    dst +=dst_base;
+    for(i = 0;i &lt; dim;i += 32){
+        for(j = 0;j &lt; dim;j++){
+            *dst = *src; src +=dim; dst++;
+            *dst = *src; src +=dim; dst++;
+            *dst = *src; src +=dim; dst++;
+            *dst = *src; src +=dim; dst++;
+            *dst = *src; src +=dim; dst++;
+            *dst = *src; src +=dim; dst++;
+            *dst = *src; src +=dim; dst++;
+            *dst = *src; src +=dim; dst++;
+            *dst = *src; src +=dim; dst++;
+            *dst = *src; src +=dim; dst++;
+            *dst = *src; src +=dim; dst++;
+            *dst = *src; src +=dim; dst++;
+            *dst = *src; src +=dim; dst++;
+            *dst = *src; src +=dim; dst++;
+            *dst = *src; src +=dim; dst++;
+            *dst = *src; src +=dim; dst++;
+            *dst = *src; src +=dim; dst++;
+            *dst = *src; src +=dim; dst++;
+            *dst = *src; src +=dim; dst++;
+            *dst = *src; src +=dim; dst++;
+            *dst = *src; src +=dim; dst++;
+            *dst = *src; src +=dim; dst++;
+            *dst = *src; src +=dim; dst++;
+            *dst = *src; src +=dim; dst++;
+            *dst = *src; src +=dim; dst++;
+            *dst = *src; src +=dim; dst++;
+            *dst = *src; src +=dim; dst++;
+            *dst = *src; src +=dim; dst++;
+            *dst = *src; src +=dim; dst++;
+            *dst = *src; src +=dim; dst++;
+            *dst = *src; src +=dim; dst++;
+            *dst = *src; src++;
+            src -= (dim&lt;&lt;5)-dim;              //src -=31*dim;
+            dst -=31+dim;
+        }
+        dst +=dst_base + dim;
+        dst +=32;
+        src +=(dim&lt;&lt;5)-dim;                    //src +=31*dim;
+    }
+}</code></pre><pre><code class="language-bash">Rotate: Version = rotate() function:
+Dim             64      128     256     512     1024    Mean
+Your CPEs       2.3     2.2     2.2     2.3     3.3
+Baseline CPEs   14.7    40.1    46.4    65.9    94.5
+Speedup         6.5     18.0    21.0    28.8    28.7    18.2</code></pre><p>最后可以得到18.2/50分,不是很好提升了...</p><h3 id="h3-5">smooth</h3><p>对于smooth函数的优化思路就比较明显了,首先每次都调用avg算一个3x3没必要,用一个变量保存移动的时候仅更新6个即可</p><p>减少函数调用等等,这里直接给出代码修改</p><p>先处理角,处理边的情况,然后处理中心区域,最后再处理边角的情况</p><pre><code class="language-c">void smooth(int dim, pixel* src, pixel* dst)
+{
+    int i, j;
+    int dim0 = dim;
+    int dim1 = dim - 1;
+    int dim2 = dim - 2;
+    pixel *P1, *P2, *P3;
+    pixel* dst1;
+    P1 = src;
+    P2 = P1 + dim0;
+    // 左上角像素处理
+    dst-&gt;red = (P1-&gt;red + (P1 + 1)-&gt;red + P2-&gt;red + (P2 + 1)-&gt;red) &gt;&gt; 2;
+    dst-&gt;green = (P1-&gt;green + (P1 + 1)-&gt;green + P2-&gt;green + (P2 + 1)-&gt;green) &gt;&gt; 2;
+    dst-&gt;blue = (P1-&gt;blue + (P1 + 1)-&gt;blue + P2-&gt;blue + (P2 + 1)-&gt;blue) &gt;&gt; 2;
+    dst++;
+    // 上边界处理
+    for (i = 1; i &lt; dim1; i++) {
+        dst-&gt;red = (P1-&gt;red + (P1 + 1)-&gt;red + (P1 + 2)-&gt;red + P2-&gt;red + (P2 + 1)-&gt;red + (P2 + 2)-&gt;red) / 6;
+        dst-&gt;green = (P1-&gt;green + (P1 + 1)-&gt;green + (P1 + 2)-&gt;green + P2-&gt;green + (P2 + 1)-&gt;green + (P2 + 2)-&gt;green) / 6;
+        dst-&gt;blue = (P1-&gt;blue + (P1 + 1)-&gt;blue + (P1 + 2)-&gt;blue + P2-&gt;blue + (P2 + 1)-&gt;blue + (P2 + 2)-&gt;blue) / 6;
+        dst++;
+        P1++;
+        P2++;
+    }
+    // 右上角像素处理
+    dst-&gt;red = (P1-&gt;red + (P1 + 1)-&gt;red + P2-&gt;red + (P2 + 1)-&gt;red) &gt;&gt; 2;
+    dst-&gt;green = (P1-&gt;green + (P1 + 1)-&gt;green + P2-&gt;green + (P2 + 1)-&gt;green) &gt;&gt; 2;
+    dst-&gt;blue = (P1-&gt;blue + (P1 + 1)-&gt;blue + P2-&gt;blue + (P2 + 1)-&gt;blue) &gt;&gt; 2;
+    dst++;
+    P1 = src;
+    P2 = P1 + dim0;
+    P3 = P2 + dim0;
+    // 左边界处理
+    for (i = 1; i &lt; dim1; i++) {
+        dst-&gt;red = (P1-&gt;red + (P1 + 1)-&gt;red + P2-&gt;red + (P2 + 1)-&gt;red + P3-&gt;red + (P3 + 1)-&gt;red) / 6;
+        dst-&gt;green = (P1-&gt;green + (P1 + 1)-&gt;green + P2-&gt;green + (P2 + 1)-&gt;green + P3-&gt;green + (P3 + 1)-&gt;green) / 6;
+        dst-&gt;blue = (P1-&gt;blue + (P1 + 1)-&gt;blue + P2-&gt;blue + (P2 + 1)-&gt;blue + P3-&gt;blue + (P3 + 1)-&gt;blue) / 6;
+        dst++;
+        dst1 = dst + 1;
+        // 中间主体部分处理
+        for (j = 1; j &lt; dim2; j += 2) {
+            // 同时处理两个像素
+            dst-&gt;red = (P1-&gt;red + (P1 + 1)-&gt;red + (P1 + 2)-&gt;red + P2-&gt;red + (P2 + 1)-&gt;red + (P2 + 2)-&gt;red + P3-&gt;red + (P3 + 1)-&gt;red + (P3 + 2)-&gt;red) / 9;
+            dst-&gt;green = (P1-&gt;green + (P1 + 1)-&gt;green + (P1 + 2)-&gt;green + P2-&gt;green + (P2 + 1)-&gt;green + (P2 + 2)-&gt;green + P3-&gt;green + (P3 + 1)-&gt;green + (P3 + 2)-&gt;green) / 9;
+            dst-&gt;blue = (P1-&gt;blue + (P1 + 1)-&gt;blue + (P1 + 2)-&gt;blue + P2-&gt;blue + (P2 + 1)-&gt;blue + (P2 + 2)-&gt;blue + P3-&gt;blue + (P3 + 1)-&gt;blue + (P3 + 2)-&gt;blue) / 9;
+            dst1-&gt;red = ((P1 + 3)-&gt;red + (P1 + 1)-&gt;red + (P1 + 2)-&gt;red + (P2 + 3)-&gt;red + (P2 + 1)-&gt;red + (P2 + 2)-&gt;red + (P3 + 3)-&gt;red + (P3 + 1)-&gt;red + (P3 + 2)-&gt;red) / 9;
+            dst1-&gt;green = ((P1 + 3)-&gt;green + (P1 + 1)-&gt;green + (P1 + 2)-&gt;green + (P2 + 3)-&gt;green + (P2 + 1)-&gt;green + (P2 + 2)-&gt;green + (P3 + 3)-&gt;green + (P3 + 1)-&gt;green + (P3 + 2)-&gt;green) / 9;
+            dst1-&gt;blue = ((P1 + 3)-&gt;blue + (P1 + 1)-&gt;blue + (P1 + 2)-&gt;blue + (P2 + 3)-&gt;blue + (P2 + 1)-&gt;blue + (P2 + 2)-&gt;blue + (P3 + 3)-&gt;blue + (P3 + 1)-&gt;blue + (P3 + 2)-&gt;blue) / 9;
+            dst += 2;
+            dst1 += 2;
+            P1 += 2;
+            P2 += 2;
+            P3 += 2;
+        }
+        for (; j &lt; dim1; j++) {
+            dst-&gt;red = (P1-&gt;red + (P1 + 1)-&gt;red + (P1 + 2)-&gt;red + P2-&gt;red + (P2 + 1)-&gt;red + (P2 + 2)-&gt;red + P3-&gt;red + (P3 + 1)-&gt;red + (P3 + 2)-&gt;red) / 9;
+            dst-&gt;green = (P1-&gt;green + (P1 + 1)-&gt;green + (P1 + 2)-&gt;green + P2-&gt;green + (P2 + 1)-&gt;green + (P2 + 2)-&gt;green + P3-&gt;green + (P3 + 1)-&gt;green + (P3 + 2)-&gt;green) / 9;
+            dst-&gt;blue = (P1-&gt;blue + (P1 + 1)-&gt;blue + (P1 + 2)-&gt;blue + P2-&gt;blue + (P2 + 1)-&gt;blue + (P2 + 2)-&gt;blue + P3-&gt;blue + (P3 + 1)-&gt;blue + (P3 + 2)-&gt;blue) / 9;
+            dst++;
+            P1++;
+            P2++;
+            P3++;
+        }
+        // 右侧边界处理
+        dst-&gt;red = (P1-&gt;red + (P1 + 1)-&gt;red + P2-&gt;red + (P2 + 1)-&gt;red + P3-&gt;red + (P3 + 1)-&gt;red) / 6;
+        dst-&gt;green = (P1-&gt;green + (P1 + 1)-&gt;green + P2-&gt;green + (P2 + 1)-&gt;green + P3-&gt;green + (P3 + 1)-&gt;green) / 6;
+        dst-&gt;blue = (P1-&gt;blue + (P1 + 1)-&gt;blue + P2-&gt;blue + (P2 + 1)-&gt;blue + P3-&gt;blue + (P3 + 1)-&gt;blue) / 6;
+        dst++;
+        P1 += 2;
+        P2 += 2;
+        P3 += 2;
+    }
+    // 右下角处理
+    dst-&gt;red = (P1-&gt;red + (P1 + 1)-&gt;red + P2-&gt;red + (P2 + 1)-&gt;red) &gt;&gt; 2;
+    dst-&gt;green = (P1-&gt;green + (P1 + 1)-&gt;green + P2-&gt;green + (P2 + 1)-&gt;green) &gt;&gt; 2;
+    dst-&gt;blue = (P1-&gt;blue + (P1 + 1)-&gt;blue + P2-&gt;blue + (P2 + 1)-&gt;blue) &gt;&gt; 2;
+    dst++;
+    // 下边界处理
+    for (i = 1; i &lt; dim1; i++) {
+        dst-&gt;red = (P1-&gt;red + (P1 + 1)-&gt;red + (P1 + 2)-&gt;red + P2-&gt;red + (P2 + 1)-&gt;red + (P2 + 2)-&gt;red) / 6;
+        dst-&gt;green = (P1-&gt;green + (P1 + 1)-&gt;green + (P1 + 2)-&gt;green + P2-&gt;green + (P2 + 1)-&gt;green + (P2 + 2)-&gt;green) / 6;
+        dst-&gt;blue = (P1-&gt;blue + (P1 + 1)-&gt;blue + (P1 + 2)-&gt;blue + P2-&gt;blue + (P2 + 1)-&gt;blue + (P2 + 2)-&gt;blue) / 6;
+        dst++;
+        P1++;
+        P2++;
+    }
+    // 右下角像素处理
+    dst-&gt;red = (P1-&gt;red + (P1 + 1)-&gt;red + P2-&gt;red + (P2 + 1)-&gt;red) &gt;&gt; 2;
+    dst-&gt;green = (P1-&gt;green + (P1 + 1)-&gt;green + P2-&gt;green + (P2 + 1)-&gt;green) &gt;&gt; 2;
+    dst-&gt;blue = (P1-&gt;blue + (P1 + 1)-&gt;blue + P2-&gt;blue + (P2 + 1)-&gt;blue) &gt;&gt; 2;
+}</code></pre><p>这里其实还可以用三个unsigned int变量记录sum_r,sum_g, sum_b,然后每次移动的时候只更新最右侧三个和减去最左侧三个</p><pre><code class="language-bash">root@da1811a84ddc:~/csapp/08Performance Lab/perflab# ./driver
+Teamname: bovik1
+Member 1: Harry Q. Bovik
+Email 1: bovik@nowhere.edu
+
+Rotate: Version = naive_rotate: Naive baseline implementation:
+Dim             64      128     256     512     1024    Mean
+Your CPEs       2.9     4.3     6.5     10.2    11.4
+Baseline CPEs   14.7    40.1    46.4    65.9    94.5
+Speedup         5.1     9.3     7.1     6.5     8.3     7.1
+
+Rotate: Version = rotate: Current working version:
+Dim             64      128     256     512     1024    Mean
+Your CPEs       2.3     2.2     2.2     2.3     3.2
+Baseline CPEs   14.7    40.1    46.4    65.9    94.5
+Speedup         6.5     17.9    20.9    28.8    29.2    18.3
+
+Smooth: Version = smooth: Current working version:
+Dim             32      64      128     256     512     Mean
+Your CPEs       15.3    15.7    16.1    15.8    15.9
+Baseline CPEs   695.0   698.0   702.0   717.0   722.0
+Speedup         45.5    44.5    43.7    45.4    45.4    44.9
+
+Smooth: Version = naive_smooth: Naive baseline implementation:
+Dim             32      64      128     256     512     Mean
+Your CPEs       60.2    50.7    61.6    60.4    60.9
+Baseline CPEs   695.0   698.0   702.0   717.0   722.0
+Speedup         11.5    13.8    11.4    11.9    11.9    12.1
+
+Summary of Your Best Scores:
+  Rotate: 18.3 (rotate: Current working version)
+  Smooth: 44.9 (smooth: Current working version)</code></pre><p>最后得分44.9/50</p><h2 id="h2-6">参考</h2><ul><li><a href="https://zhuanlan.zhihu.com/p/488141606" target="_blank">CSAPP | Lab6-Performance Lab 深入解析</a></li></ul><ul><li><a href="https://github.com/Exely/CSAPP-Labs/blob/master/notes/perflab.md" target="_blank">github Performance Lab 笔记</a></li></ul><ul><li><a href="https://segmentfault.com/a/1190000038753527" target="_blank">perf lab</a></li></ul></div>
+    <div class="dir-tree"><ul><li><a href="../../md-docs/README" >README</a></li></ul><ul><li><a href="../../md-docs/01-DataLab" >01-DataLab</a></li></ul><ul><li><a href="../../md-docs/02-BombLab" >02-BombLab</a></li></ul><ul><li><a href="../../md-docs/03-AttackLab" >03-AttackLab</a></li></ul><ul><li><a href="../../md-docs/04-BufferLab" >04-BufferLab</a></li></ul><ul><li><a href="../../md-docs/05-ArchitectureLab" >05-ArchitectureLab</a></li></ul><ul><li><a href="../../md-docs/06-ArchY86Lab" >06-ArchY86Lab</a></li></ul><ul><li><a href="../../md-docs/07-CacheLab" >07-CacheLab</a></li></ul><ul><li><a href="../../md-docs/08-PerformanceLab" >08-PerformanceLab</a></li></ul><ul><li><a href="../../md-docs/09-ShellLab" >09-ShellLab</a></li></ul><ul><li><a href="../../md-docs/10-MallocLab" >10-MallocLab</a></li></ul><ul><li><a href="../../md-docs/11-ProxyLab" >11-ProxyLab</a></li></ul></div>
+    <div class="zood"><a class="" href="https://github.com/luzhixing12345/zood" target="_blank">zood</a></div>
+    <script type="text/javascript" src="../../../js/next_front.js"></script><script>addLink("../../md-docs/07-CacheLab","../../md-docs/09-ShellLab","ab")</script><script type="text/javascript" src="../../../js/change_mode.js"></script><script>addChangeModeButton("../../../img/sun.png","../../../img/moon.png")</script><script type="text/javascript" src="../../../js/copy_code.js"></script><script>addCodeCopy("../../../img/before_copy.png","../../../img/after_copy.png")</script><script type="text/javascript" src="../../../js/navigator.js"></script><script type="text/javascript" src="../../../js/prism.js"></script><script type="text/javascript" src="../../../js/picture_preview.js"></script><script type="text/javascript" src="../../../js/check_box.js"></script>
+</body>
+
+</html>
