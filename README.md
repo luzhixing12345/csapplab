@@ -10,7 +10,9 @@ csapplab 实验笔记: https://luzhixing12345.github.io/csapplab
 
 官网[Lab Assignments](http://csapp.cs.cmu.edu/3e/labs.html)提供了所有的实验内容,只需要点击后面的 `Self-Study Handout` 就可以下载自学版本的压缩包
 
-为了方便也可以直接下载[CSAPP完整版压缩包](https://github.com/learner-lu/resources-download/releases/download/v0.0.0/CSAPP-LAB.zip)
+为了方便也可以直接下载[CSAPP完整版压缩包](https://github.com/luzhixing12345/csapplab/releases/download/v0.0.1/csapplab.zip)
+
+原书英文版: [Computer_Systems_A_Programmers_Perspective.3rd.pdf](https://github.com/luzhixing12345/csapplab/releases/download/v0.0.1/Computer_Systems_A_Programmers_Perspective.3rd.pdf)
 
 ## 实验环境
 

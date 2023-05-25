@@ -72,6 +72,7 @@ team_t team = {
 void *heap_listp;
 
 static void *extend_heap(size_t words);  // 堆空间不足时扩展
+static void *coalesce(void *bp);         // 合并空闲块
 
 static void *first_fit(size_t size);
 static void place(void *bp, size_t size);
@@ -106,68 +107,11 @@ static void *extend_heap(size_t words) {
     PUT(HDRP(bp), PACK(size, 0));          // 头部块置0
     PUT(FTRP(bp), PACK(size, 0));          // 尾部块置0
     PUT(HDRP(NEXT_BLKP(bp)), PACK(0, 1));  // 重置结尾块
-    // 前面的块是是空闲块, 直接合并新的扩展的块
-    if (!GET_ALLOC(FTRP(PREV_BLKP(bp)))) {
-        size += GET_SIZE(HDRP(PREV_BLKP(bp)));
-        bp = PREV_BLKP(bp);
-        PUT(HDRP(bp), PACK(size, 0));
-        PUT(FTRP(bp), PACK(size, 0));
-    } else {
-        PUT_ADDR(PRED(bp), 0);
-        PUT_ADDR(SUCC(bp), heap_listp);
-        if (NEXT_FREE_BLKP(bp)) {
-            PUT_ADDR(PRED(NEXT_FREE_BLKP(bp)), bp);
-        }
-        heap_listp = bp;
-    }
-    return bp;
-}
-/*
- * mm_malloc - Allocate a block by incrementing the brk pointer.
- *     Always allocate a block whose size is a multiple of the alignment.
- */
-void *mm_malloc(size_t size) {
-    size_t block_size;   // 块大小
-    size_t extend_size;  // 额外分配的堆空间
-
-    void *bp;
-
-    if (size == 0) {
-        return NULL;
-    }
-
-    // 小于等于 DSIZE 的大小直接补齐 2*DSIZE
-    if (size <= DSIZE) {
-        block_size = 3 * DSIZE;
-    } else {
-        // DSIZE 对齐 + 头尾 DSIZE
-        block_size = (size + DSIZE - 1) / DSIZE * DSIZE + DSIZE;
-    }
-
-    // 通过搜索算法找到一个合适的空闲块
-    if ((bp = first_fit(block_size)) != NULL) {
-        place(bp, block_size);
-        return bp;
-    }
-
-    // 如果没找到, 说明需要扩容堆空间
-    extend_size = MAX(block_size, CHUNKSIZE);
-    if ((bp = extend_heap(extend_size / WSIZE)) == NULL) {
-        // 扩容失败, 堆已达最大 MAX_HEAP
-        return NULL;
-    }
-    place(bp, block_size);
-    return bp;
+    return coalesce(bp);
 }
 
-/*
- * mm_free - Freeing a block does nothing.
- */
-void mm_free(void *bp) {
+void *coalesce(void *bp) {
     size_t size = GET_SIZE(HDRP(bp));
-    PUT(HDRP(bp), PACK(size, 0));
-    PUT(FTRP(bp), PACK(size, 0));
-
     size_t prev_alloc = GET_ALLOC(FTRP(PREV_BLKP(bp)));
     size_t next_alloc = GET_ALLOC(HDRP(NEXT_BLKP(bp)));
 
@@ -209,10 +153,10 @@ void mm_free(void *bp) {
     } else if (!prev_alloc && next_alloc) {
         // case 3: 前不占后占, 直接合并
         size += GET_SIZE(HDRP(PREV_BLKP(bp)));
+        bp = PREV_BLKP(bp);
+        PUT(HDRP(bp), PACK(size, 0));
         PUT(FTRP(bp), PACK(size, 0));
-        PUT(HDRP(PREV_BLKP(bp)), PACK(size, 0));
     } else {
-
         // case 4: 前后都空, 合并三个空闲块, 更新第一个块的节点
         void *pre_bp = PREV_BLKP(bp);
         void *next_bp = NEXT_BLKP(bp);
@@ -229,10 +173,59 @@ void mm_free(void *bp) {
             PUT_ADDR(PRED(NEXT_FREE_BLKP(next_bp)), 0);
             heap_listp = NEXT_FREE_BLKP(next_bp);
         } else {
-            // 永远不应该到达这里...   
-            printf("%p\n",heap_listp);
+            // 永远不应该到达这里...
+            printf("%p\n", heap_listp);
         }
     }
+    return bp;
+}
+
+/*
+ * mm_malloc - Allocate a block by incrementing the brk pointer.
+ *     Always allocate a block whose size is a multiple of the alignment.
+ */
+void *mm_malloc(size_t size) {
+    size_t block_size;   // 块大小
+    size_t extend_size;  // 额外分配的堆空间
+
+    void *bp;
+
+    if (size == 0) {
+        return NULL;
+    }
+
+    // 小于等于 DSIZE 的大小直接补齐 3*DSIZE
+    if (size <= DSIZE) {
+        block_size = 3 * DSIZE;
+    } else {
+        // DSIZE 对齐 + 头尾 DSIZE
+        block_size = (size + DSIZE - 1) / DSIZE * DSIZE + DSIZE;
+    }
+
+    // 通过搜索算法找到一个合适的空闲块
+    if ((bp = first_fit(block_size)) != NULL) {
+        place(bp, block_size);
+        return bp;
+    }
+
+    // 如果没找到, 说明需要扩容堆空间
+    extend_size = MAX(block_size, CHUNKSIZE);
+    if ((bp = extend_heap(extend_size / WSIZE)) == NULL) {
+        // 扩容失败, 堆已达最大 MAX_HEAP
+        return NULL;
+    }
+    place(bp, block_size);
+    return bp;
+}
+
+/*
+ * mm_free - Freeing a block does nothing.
+ */
+void mm_free(void *bp) {
+    size_t size = GET_SIZE(HDRP(bp));
+    PUT(HDRP(bp), PACK(size, 0));
+    PUT(FTRP(bp), PACK(size, 0));
+    coalesce(bp);
 }
 
 /*
@@ -277,8 +270,7 @@ void *mm_realloc(void *ptr, size_t size) {
         }
         return ptr;
     } else {
-        if (!GET_ALLOC(HDRP(NEXT_BLKP(ptr))) &&
-            (GET_SIZE(HDRP(NEXT_BLKP(ptr))) >= (size - block_size))) {
+        if (!GET_ALLOC(HDRP(NEXT_BLKP(ptr))) && (GET_SIZE(HDRP(NEXT_BLKP(ptr))) >= (size - block_size))) {
             // 下一个块就有空间
             size_t next_block_rest_size = GET_SIZE(HDRP(NEXT_BLKP(ptr))) + block_size - size;
             if (next_block_rest_size < 3 * DSIZE) {

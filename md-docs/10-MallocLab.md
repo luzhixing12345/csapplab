@@ -27,38 +27,6 @@ malloc lab是设计一个自己的用于分配和管理内存的malloc free的�
 
 make编译即可
 
-这个实验该说不说还是 debug 了很久很久的, segmentation fault 还是太不友好了呜呜
-
-## 前置知识
-
-开始本实验之前建议先复习一下虚拟内存动态内存分配 9.9 节, 读者也可以阅读笔者的一些文档
-
-- [动态内存分配](https://luzhixing12345.github.io/2023/03/30/%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84/%E5%8A%A8%E6%80%81%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D/#%E5%AE%9E%E9%AA%8C%E6%8A%A5%E5%91%8A)
-- [虚拟内存](https://luzhixing12345.github.io/2023/03/26/%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84/%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98/)
-
-这里做一个简要的回顾, 采用隐式静态链表连接各个块, 结构如下
-
-![20230331005342](https://raw.githubusercontent.com/learner-lu/picbed/master/20230331005342.png)
-
-堆中隐式链表的上各个块的组织结构如下
-
-![20230330200747](https://raw.githubusercontent.com/learner-lu/picbed/master/20230330200747.png)
-
-其中每一个正方形块代表 4 字节, 这里的 8/0 16/1 表示的意思是 `分配块的大小/已分配位`, 红色块为链表头, 蓝色块为实际申请的内存大小, 灰色块为填充位. 所以整个堆被划分为了几部分, 4字节空闲 + 8字节已分配 + 24字节空闲 + 12字节已分配, 中间穿插着一些头部信息块和填充块. 再创建一个链表结构保存头节点的相关信息, 以实现后续的分配释放
-
-当分配器释放一个块的时候有四种情况, 其中中间空白处+前后的头/尾组成了一个完整的分配块, m1 m2为块大小, a/f 表示这个块是已分配的还是空闲的. 蓝色的块是当前分配器考虑释放的块
-
-![20230331014333](https://raw.githubusercontent.com/learner-lu/picbed/master/20230331014333.png)
-
-- 前后都是已分配的
-- 前是已分配的, 后是空闲的
-- 前是空闲的, 后是已分配的
-- 前后都是空闲的
-
-## 实验报告
-
-CSAPP 书中给出了相关的代码说明, 这里做一个补充总结
-
 ### 任务目标
 
 我们需要完成的是mm.h中声明的四个函数, 在mm.c中实现
@@ -146,6 +114,39 @@ void *mem_sbrk(int incr) {
     return (void *)old_brk;
 }
 ```
+
+
+## 前置知识
+
+开始本实验之前建议先复习一下虚拟内存动态内存分配 9.9 节, 读者也可以阅读笔者的一些文档
+
+- [动态内存分配](https://luzhixing12345.github.io/2023/03/30/%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84/%E5%8A%A8%E6%80%81%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D/#%E5%AE%9E%E9%AA%8C%E6%8A%A5%E5%91%8A)
+- [虚拟内存](https://luzhixing12345.github.io/2023/03/26/%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84/%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98/)
+
+这里做一个简要的回顾, 采用隐式静态链表连接各个块, 结构如下
+
+![20230331005342](https://raw.githubusercontent.com/learner-lu/picbed/master/20230331005342.png)
+
+堆中隐式链表的上各个块的组织结构如下
+
+![20230330200747](https://raw.githubusercontent.com/learner-lu/picbed/master/20230330200747.png)
+
+其中每一个正方形块代表 4 字节, 这里的 8/0 16/1 表示的意思是 `分配块的大小/已分配位`, 红色块为链表头, 蓝色块为实际申请的内存大小, 灰色块为填充位. 所以整个堆被划分为了几部分, 4字节空闲 + 8字节已分配 + 24字节空闲 + 12字节已分配, 中间穿插着一些头部信息块和填充块. 再创建一个链表结构保存头节点的相关信息, 以实现后续的分配释放
+
+当分配器释放一个块的时候有四种情况, 其中中间空白处+前后的头/尾组成了一个完整的分配块, m1 m2为块大小, a/f 表示这个块是已分配的还是空闲的. 蓝色的块是当前分配器考虑释放的块
+
+![20230331014333](https://raw.githubusercontent.com/learner-lu/picbed/master/20230331014333.png)
+
+- 前后都是已分配的
+- 前是已分配的, 后是空闲的
+- 前是空闲的, 后是已分配的
+- 前后都是空闲的
+
+## 隐式空闲链表
+
+CSAPP 书中给出了相关的代码说明, 这里做一个补充总结
+
+> 完整代码实现见 [mm_implicit.c](https://github.com/luzhixing12345/csapplab/blob/main/10_malloclab/mm_implicit.c)
 
 ### 宏定义
 
@@ -544,312 +545,6 @@ best_fit 的结果 68/100, 主要是因为 best_fit 需要扫描所有块
 
 ![20230523003450](https://raw.githubusercontent.com/learner-lu/picbed/master/20230523003450.png)
 
-完整代码如下:
-
-```c
-#include "mm.h"
-
-#include <assert.h>
-#include <stddef.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-
-#include "memlib.h"
-
-/*********************************************************
- * NOTE TO STUDENTS: Before you do anything else, please
- * provide your team information in the following struct.
- ********************************************************/
-team_t team = {
-    /* Team name */
-    "ateam",
-    /* First member's full name */
-    "Harry Bovik",
-    /* First member's email address */
-    "bovik@cs.cmu.edu",
-    /* Second member's full name (leave blank if none) */
-    "",
-    /* Second member's email address (leave blank if none) */
-    ""};
-
-/* single word (4) or double word (8) alignment */
-#define ALIGNMENT 8
-
-/* rounds up to the nearest multiple of ALIGNMENT */
-#define ALIGN(size) (((size) + (ALIGNMENT - 1)) & ~0x7)
-
-#define SIZE_T_SIZE (ALIGN(sizeof(size_t)))
-
-#define WSIZE 4              // 单字大小
-#define DSIZE 8              // 双字大小
-#define CHUNKSIZE (1 << 12)  // 扩展堆时的默认大小
-
-#define MAX(x, y) ((x) > (y) ? (x) : (y))
-
-#define GET(p) (*(unsigned int *)(p))
-#define PUT(p, val) (*(unsigned int *)(p) = (val))
-
-#define PACK(size, alloc) ((size) | (alloc))
-#define GET_SIZE(p) (GET(p) & ~0x7)
-#define GET_ALLOC(p) (GET(p) & 0x1)
-
-#define HDRP(bp) ((char *)(bp)-WSIZE)
-#define FTRP(bp) ((char *)(bp) + GET_SIZE(HDRP(bp)) - DSIZE)
-#define NEXT_BLKP(bp) ((char *)(bp) + GET_SIZE(((char *)(bp)-WSIZE)))
-#define PREV_BLKP(bp) ((char *)(bp)-GET_SIZE(((char *)(bp)-DSIZE)))
-
-void *heap_listp;
-
-static void *extend_heap(size_t words);  // 堆空间不足时扩展
-static void *coalesce(void *bp);         // 合并空闲块
-
-static void *first_fit(size_t size);
-static void *best_fit(size_t size);
-
-void *(*search_method)(size_t size) = first_fit;  // 搜索算法
-
-static void place(void *bp, size_t size);
-
-/*
- * mm_init - initialize the malloc package.
- */
-int mm_init(void) {
-    if ((heap_listp = mem_sbrk(4 * WSIZE)) == (void *)-1) {
-        return -1;
-    }
-    PUT(heap_listp, 0);
-    PUT(heap_listp + (1 * WSIZE), PACK(DSIZE, 1));
-    PUT(heap_listp + (2 * WSIZE), PACK(DSIZE, 1));
-    PUT(heap_listp + (3 * WSIZE), PACK(0, 1));
-    heap_listp += 4 * WSIZE;
-
-    if (extend_heap(CHUNKSIZE / WSIZE) == NULL) {
-        return -1;
-    }
-    return 0;
-}
-
-static void *extend_heap(size_t words) {
-    void *bp;
-    size_t size;
-
-    size = (words % 2) ? (words + 1) * WSIZE : words * WSIZE;
-    if ((long)(bp = mem_sbrk(size)) == -1) {
-        return NULL;
-    }
-    PUT(HDRP(bp), PACK(size, 0));          // 头部块置0
-    PUT(FTRP(bp), PACK(size, 0));          // 尾部块置0
-    PUT(HDRP(NEXT_BLKP(bp)), PACK(0, 1));  // 重置结尾块
-    return coalesce(bp);
-}
-
-static void *coalesce(void *bp) {
-    size_t prev_alloc = GET_ALLOC(FTRP(PREV_BLKP(bp)));
-    size_t next_alloc = GET_ALLOC(HDRP(NEXT_BLKP(bp)));
-    size_t size = GET_SIZE(HDRP(bp));
-
-    // case 1: 前后都被占用
-    if (prev_alloc && next_alloc) {
-        return bp;
-    } else if (prev_alloc && !next_alloc) {
-        // case 2: 前占后不占
-        size += GET_SIZE(HDRP(NEXT_BLKP(bp)));
-        PUT(HDRP(bp), PACK(size, 0));
-        PUT(FTRP(bp), PACK(size, 0));
-        return bp;
-    } else if (!prev_alloc && next_alloc) {
-        // case 3: 前不占后占
-        size += GET_SIZE(HDRP(PREV_BLKP(bp)));
-        PUT(FTRP(bp), PACK(size, 0));
-        PUT(HDRP(PREV_BLKP(bp)), PACK(size, 0));
-        return PREV_BLKP(bp);
-    } else {
-        // case 4: 前后都空
-        size += GET_SIZE(HDRP(PREV_BLKP(bp))) + GET_SIZE(FTRP(NEXT_BLKP(bp)));
-        PUT(HDRP(PREV_BLKP(bp)), PACK(size, 0));
-        PUT(FTRP(NEXT_BLKP(bp)), PACK(size, 0));
-        return PREV_BLKP(bp);
-    }
-}
-
-/*
- * mm_malloc - Allocate a block by incrementing the brk pointer.
- *     Always allocate a block whose size is a multiple of the alignment.
- */
-void *mm_malloc(size_t size) {
-    size_t block_size;   // 块大小
-    size_t extend_size;  // 额外分配的堆空间
-
-    void *bp;
-
-    if (size == 0) {
-        return NULL;
-    }
-
-    // 小于等于 DSIZE 的大小直接补齐 2*DSIZE
-    if (size <= DSIZE) {
-        block_size = 2 * DSIZE;
-    } else {
-        // DSIZE 对齐 + 头尾 DSIZE
-        block_size = (size + DSIZE - 1) / DSIZE * DSIZE + DSIZE;
-    }
-
-    // 通过搜索算法找到一个合适的空闲块
-    if ((bp = search_method(block_size)) != NULL) {
-        place(bp, block_size);
-        return bp;
-    }
-
-    // 如果没找到, 说明需要扩容堆空间
-    extend_size = MAX(block_size, CHUNKSIZE);
-    if ((bp = extend_heap(extend_size / WSIZE)) == NULL) {
-        // 扩容失败, 堆已达最大 MAX_HEAP
-        return NULL;
-    }
-    place(bp, block_size);
-    return bp;
-}
-
-/*
- * mm_free - Freeing a block does nothing.
- */
-void mm_free(void *ptr) {
-    size_t size = GET_SIZE(HDRP(ptr));
-    PUT(HDRP(ptr), PACK(size, 0));
-    PUT(FTRP(ptr), PACK(size, 0));
-    coalesce(ptr);
-}
-
-/*
- * mm_realloc - Implemented simply in terms of mm_malloc and mm_free
- */
-void *mm_realloc(void *ptr, size_t size) {
-    if (ptr == NULL) {
-        return mm_malloc(size);
-    }
-    if (size == 0) {
-        mm_free(ptr);
-        return NULL;
-    }
-
-    size = (size + DSIZE - 1) / DSIZE * DSIZE + DSIZE;
-
-    size_t block_size = GET_SIZE(HDRP(ptr));
-
-    if (size == block_size) {
-        return ptr;
-    } else if (size < block_size) {
-        // 在当前分配块中修改大小
-        size_t block_rest_size = block_size - size;
-        // 判断是否分裂
-        if (block_rest_size > DSIZE) {
-            PUT(HDRP(ptr), PACK(size, 1));
-            PUT(FTRP(ptr), PACK(size, 1));
-            PUT(HDRP(NEXT_BLKP(ptr)), PACK(block_rest_size, 0));
-            PUT(FTRP(NEXT_BLKP(ptr)), PACK(block_rest_size, 0));
-            coalesce(NEXT_BLKP(ptr));
-        }
-        return ptr;
-    } else {
-        if (!GET_ALLOC(HDRP(NEXT_BLKP(ptr))) &&
-            (GET_SIZE(HDRP(NEXT_BLKP(ptr))) >= (size - block_size))) {
-            // 下一个块就有空间
-            size_t next_block_rest_size = GET_SIZE(HDRP(NEXT_BLKP(ptr))) + block_size - size;
-            if (next_block_rest_size <= DSIZE) {
-                size_t new_size = GET_SIZE(HDRP(NEXT_BLKP(ptr))) + block_size;
-                PUT(HDRP(ptr), PACK(new_size, 1));
-                PUT(FTRP(ptr), PACK(new_size, 1));
-                return ptr;
-            } else {
-                PUT(HDRP(ptr), PACK(size, 1));
-                PUT(FTRP(ptr), PACK(size, 1));
-                PUT(HDRP(NEXT_BLKP(ptr)), PACK(next_block_rest_size, 0));
-                PUT(FTRP(NEXT_BLKP(ptr)), PACK(next_block_rest_size, 0));
-                return ptr;
-            }
-        } else {
-            void *bp = mm_malloc(size);
-            if (bp == NULL) {
-                return NULL;
-            }
-            memcpy(bp, ptr, block_size - DSIZE);
-            mm_free(ptr);
-            return bp;
-        }
-    }
-}
-
-void place(void *bp, size_t size) {
-    size_t block_size = GET_SIZE(HDRP(bp));
-    size_t block_rest_size = block_size - size;
-    // 剩余块的大小 <= 最小块大小
-    if (block_rest_size <= DSIZE) {
-        PUT(HDRP(bp), PACK(block_size, 1));
-        PUT(FTRP(bp), PACK(block_size, 1));
-    } else {
-        // 分裂
-        PUT(HDRP(bp), PACK(size, 1));
-        PUT(FTRP(bp), PACK(size, 1));
-        PUT(HDRP(NEXT_BLKP(bp)), PACK(block_rest_size, 0));
-        PUT(FTRP(NEXT_BLKP(bp)), PACK(block_rest_size, 0));
-    }
-}
-
-void *first_fit(size_t size) {
-    void *bp = heap_listp;
-
-    while (1) {
-        // 已被分配, 下一个
-        size_t block_size = GET_SIZE(HDRP(bp));
-        if (GET_ALLOC(HDRP(bp))) {
-            bp = NEXT_BLKP(bp);
-        } else {
-            // 空闲块
-            if (block_size >= size) {
-                // 大小足够, 直接返回
-                return bp;
-            } else {
-                bp = NEXT_BLKP(bp);
-            }
-        }
-        if (block_size == 0) {
-            return NULL;
-        }
-    }
-}
-
-void *best_fit(size_t size) {
-    void *bp = heap_listp;
-    void *best_bp = NULL;
-    size_t min_block_size = -1;
-
-    while (1) {
-        // 已被分配, 下一个
-        size_t block_size = GET_SIZE(HDRP(bp));
-        if (GET_ALLOC(HDRP(bp))) {
-            bp = NEXT_BLKP(bp);
-        } else {
-            // 空闲块
-            if (block_size >= size) {
-                if (block_size < min_block_size) {
-                    min_block_size = block_size;
-                    best_bp = bp;
-                }
-            }
-            bp = NEXT_BLKP(bp);
-        }
-        if (block_size == 0) {
-            break;
-        }
-    }
-    return best_bp;
-}
-```
-
-## 优化
-
 显然 75 分并不够理想, 我们需要考虑一下如下优化程序. 观察一下测试结果, 其中手册中提到了评分标准, 正确性20%, 空间利用率 util 和操作数Kops 分别 35%, 最后 10% 是代码规范性
 
 ```bash
@@ -875,7 +570,10 @@ Perf index = 51 (util) + 24 (thru) = 75/100
 
 malloc 主要的难点就是在于如何在尽可能短的时间内找到一个合适的块用于分配, 目前的 first_fit 近乎 O(N) 的时间复杂度, 随着块的分配数量越来越多, 耗时会越来越长, 这显然是不甚理想的
 
-### 显式空闲链表
+
+## 显式空闲链表
+
+> 完整代码实现见 [mm_explicit.c](https://github.com/luzhixing12345/csapplab/blob/main/10_malloclab/mm_explicit.c)
 
 显式空闲链表的又进一步设置了两个小块, pred 和 succ 分别记录前驱和后继. 如下所示
 
@@ -883,102 +581,50 @@ malloc 主要的难点就是在于如何在尽可能短的时间内找到一个�
 
 > 这里使用双向链表的原因是为了分配的时候可以在 O(1) 找到前一个和后一个空闲块, 否则只能不断地 NEXT/PRED + GET_ALLOC 的去找
 
+这样的一个显然的好处就是只会搜索空闲块, 如果在已分配块很多的情况下效率就会高很多.
+
 当然, 带来的一个问题就是又加入了新的结构, 每一个分配块的最小大小又增加了, 内部空间碎片率也会更高
 
 ![20230523015859](https://raw.githubusercontent.com/learner-lu/picbed/master/20230523015859.png)
 
-与此同时还需要考虑的一个问题就是如何更新和维护这个双向链表. 如下图A所示, "?" 块刚刚被释放, 它需要作为一个空闲块加入链表
+与此同时还需要考虑的一个问题就是如何更新和维护这个双向链表. 如下图A所示, "?" 块刚刚被释放, 它需要作为一个空闲块加入链表, 那么如何更新链表呢
+
+> 这里实际上是双向链表, 做了一步画图上的省略
 
 ![20230523025234](https://raw.githubusercontent.com/learner-lu/picbed/master/20230523025234.png)
 
 第一种方式 B 就是直接按照顺序加入, 但是显然这需要 O(N) 的时间搜索前一个空闲块的位置
 
-第二种方式 C 直接将释放的块插入到链表的头部
+第二种方式 C 直接将释放的块插入到链表的头部, 这样就可以实现在 O(1) 时间内完成回收.
 
-![20230524152405](https://raw.githubusercontent.com/learner-lu/picbed/master/20230524152405.png)
+### 宏定义
+
+对照原先的宏定义又添加了如下
 
 ```c
-/*
- * mm-naive.c - The fastest, least memory-efficient malloc package.
- *
- * In this naive approach, a block is allocated by simply incrementing
- * the brk pointer.  A block is pure payload. There are no headers or
- * footers.  Blocks are never coalesced or reused. Realloc is
- * implemented directly using mm_malloc and mm_free.
- *
- * NOTE TO STUDENTS: Replace this header comment with your own header
- * comment that gives a high level description of your solution.
- */
-#include "mm.h"
-
-#include <assert.h>
-#include <stddef.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-
-#include "memlib.h"
-
-/*********************************************************
- * NOTE TO STUDENTS: Before you do anything else, please
- * provide your team information in the following struct.
- ********************************************************/
-team_t team = {
-    /* Team name */
-    "ateam",
-    /* First member's full name */
-    "Harry Bovik",
-    /* First member's email address */
-    "bovik@cs.cmu.edu",
-    /* Second member's full name (leave blank if none) */
-    "",
-    /* Second member's email address (leave blank if none) */
-    ""};
-
-/* single word (4) or double word (8) alignment */
-#define ALIGNMENT 8
-
-/* rounds up to the nearest multiple of ALIGNMENT */
-#define ALIGN(size) (((size) + (ALIGNMENT - 1)) & ~0x7)
-
-#define SIZE_T_SIZE (ALIGN(sizeof(size_t)))
-
-#define WSIZE 4              // 单字大小
-#define DSIZE 8              // 双字大小
-#define CHUNKSIZE (1 << 12)  // 扩展堆时的默认大小
-
-#define MAX(x, y) ((x) > (y) ? (x) : (y))
-
-#define GET(p) (*(unsigned int *)(p))
-#define PUT(p, val) (*(unsigned int *)(p) = (val))
 #define PUT_ADDR(p, val) (*(unsigned long *)(p) = (unsigned long)(val))
 #define VAL(val) (val == NULL ? 0 : (*(unsigned long *)val))
 
-#define PACK(size, alloc) ((size) | (alloc))
-#define GET_SIZE(p) (GET(p) & ~0x7)
-#define GET_ALLOC(p) (GET(p) & 0x1)
-
-#define HDRP(bp) ((char *)(bp)-WSIZE)
-#define FTRP(bp) ((char *)(bp) + GET_SIZE(HDRP(bp)) - DSIZE)
 #define PRED(bp) ((char *)(bp))
 #define SUCC(bp) ((char *)(bp) + DSIZE)
 
-#define NEXT_BLKP(bp) ((char *)(bp) + GET_SIZE(((char *)(bp)-WSIZE)))
-#define PREV_BLKP(bp) ((char *)(bp)-GET_SIZE(((char *)(bp)-DSIZE)))
 #define NEXT_FREE_BLKP(bp) ((void *)*(unsigned long *)SUCC(bp))
 #define PREV_FREE_BLKP(bp) ((void *)*(unsigned long *)PRED(bp))
+```
 
-void *heap_listp;
+其中 PUT_ADDR 用于将一个值赋给一个指针, 这会在更新双向链表的时候使用到. VAL 用于取出当前地址的值(判断一下NULL的话取0). PRED 和 SUCC 分别用于得到两个链表指针的位置
 
-static void *extend_heap(size_t words);  // 堆空间不足时扩展
+NEXT_FREE_BLKP PREV_FREE_BLKP 则是通过链表指针得到下一个和前一个空闲块的地址
 
-static void *first_fit(size_t size);
-static void place(void *bp, size_t size);
+**这里需要注意的是, 笔者将 PRED SUCC 指针均看作 8 字节, 也就是 DSIZE 大小**, 实际上在 Makefile 中看到编译选项使用了 -m32 作为一个 32 位地址来计算的. **也就是说 PRED SUCC 指针使用 WSIZE 大小是完全没有问题的**.
 
-/*
- * mm_init - initialize the malloc package.
- */
+> 这里是为了考虑 64 位兼容所以做的扩容, 也是考虑到 (void *) 的强制类型转换得到的地址 8 字节应该合理一些
+
+### mm_init
+
+整个堆的初始化结构基本没有变化, 唯一修改的位置是 `heap_listp = NULL;`, 之前 heap_listp 指向整个链表的头部, 显示空闲链表终稿则应该指向 第一个空闲块
+
+```c
 int mm_init(void) {
     if ((heap_listp = mem_sbrk(4 * WSIZE)) == (void *)-1) {
         return -1;
@@ -994,81 +640,29 @@ int mm_init(void) {
     }
     return 0;
 }
+```
 
-static void *extend_heap(size_t words) {
-    void *bp;
-    size_t size;
+extend_heap 的部分没有变化, 但是在其中的 `coalesce` 需要大幅修改. 依然需要考虑 (前)/(后) x (占)/(空) 四种情况, **但是还需要注意(前)/(后) 节点是否为 NULL**
 
-    size = (words % 2) ? (words + 1) * WSIZE : words * WSIZE;
-    if ((long)(bp = mem_sbrk(size)) == -1) {
-        return NULL;
-    }
-    PUT(HDRP(bp), PACK(size, 0));          // 头部块置0
-    PUT(FTRP(bp), PACK(size, 0));          // 尾部块置0
-    PUT(HDRP(NEXT_BLKP(bp)), PACK(0, 1));  // 重置结尾块
-    // 前面的块是是空闲块, 直接合并新的扩展的块
-    if (!GET_ALLOC(FTRP(PREV_BLKP(bp)))) {
-        size += GET_SIZE(HDRP(PREV_BLKP(bp)));
-        bp = PREV_BLKP(bp);
-        PUT(HDRP(bp), PACK(size, 0));
-        PUT(FTRP(bp), PACK(size, 0));
-    } else {
-        PUT_ADDR(PRED(bp), 0);
-        PUT_ADDR(SUCC(bp), VAL(heap_listp));
-        if (NEXT_FREE_BLKP(bp)) {
-            PUT_ADDR(PRED(NEXT_FREE_BLKP(bp)), bp);
-        }
-        heap_listp = bp;
-    }
-    return bp;
+因为是一个双向链表, 所以需要同时考虑更新多个节点的指针值, 这里需要额外小心注意, 不然很容易空指针错误. 建议采用下面这种写法, 比较清晰的判断.
+
+```c
+if (PREV_FREE_BLKP(next_bp) && NEXT_FREE_BLKP(next_bp)) {
+  // ...     
+} else if (!PREV_FREE_BLKP(next_bp) && NEXT_FREE_BLKP(next_bp)) {
+  // ...
+} else if (PREV_FREE_BLKP(next_bp) && !NEXT_FREE_BLKP(next_bp)) {
+  // ...
+} else {
+  // ...
 }
+```
 
-/*
- * mm_malloc - Allocate a block by incrementing the brk pointer.
- *     Always allocate a block whose size is a multiple of the alignment.
- */
-void *mm_malloc(size_t size) {
-    size_t block_size;   // 块大小
-    size_t extend_size;  // 额外分配的堆空间
+修改后的代码如下所示
 
-    void *bp;
-
-    if (size == 0) {
-        return NULL;
-    }
-
-    // 小于等于 DSIZE 的大小直接补齐 2*DSIZE
-    if (size <= DSIZE) {
-        block_size = 3 * DSIZE;
-    } else {
-        // DSIZE 对齐 + 头尾 DSIZE
-        block_size = (size + DSIZE - 1) / DSIZE * DSIZE + DSIZE;
-    }
-
-    // 通过搜索算法找到一个合适的空闲块
-    if ((bp = first_fit(block_size)) != NULL) {
-        place(bp, block_size);
-        return bp;
-    }
-
-    // 如果没找到, 说明需要扩容堆空间
-    extend_size = MAX(block_size, CHUNKSIZE);
-    if ((bp = extend_heap(extend_size / WSIZE)) == NULL) {
-        // 扩容失败, 堆已达最大 MAX_HEAP
-        return NULL;
-    }
-    place(bp, block_size);
-    return bp;
-}
-
-/*
- * mm_free - Freeing a block does nothing.
- */
-void mm_free(void *bp) {
+```c
+void *coalesce(void *bp) {
     size_t size = GET_SIZE(HDRP(bp));
-    PUT(HDRP(bp), PACK(size, 0));
-    PUT(FTRP(bp), PACK(size, 0));
-
     size_t prev_alloc = GET_ALLOC(FTRP(PREV_BLKP(bp)));
     size_t next_alloc = GET_ALLOC(HDRP(NEXT_BLKP(bp)));
 
@@ -1110,10 +704,10 @@ void mm_free(void *bp) {
     } else if (!prev_alloc && next_alloc) {
         // case 3: 前不占后占, 直接合并
         size += GET_SIZE(HDRP(PREV_BLKP(bp)));
+        bp = PREV_BLKP(bp);
+        PUT(HDRP(bp), PACK(size, 0));
         PUT(FTRP(bp), PACK(size, 0));
-        PUT(HDRP(PREV_BLKP(bp)), PACK(size, 0));
     } else {
-
         // case 4: 前后都空, 合并三个空闲块, 更新第一个块的节点
         void *pre_bp = PREV_BLKP(bp);
         void *next_bp = NEXT_BLKP(bp);
@@ -1130,14 +724,128 @@ void mm_free(void *bp) {
             PUT_ADDR(PRED(NEXT_FREE_BLKP(next_bp)), 0);
             heap_listp = NEXT_FREE_BLKP(next_bp);
         } else {
-            printf("%p\n",heap_listp);
+            // 永远不应该到达这里...
+            printf("%p\n", heap_listp);
+        }
+    }
+    return bp;
+}
+```
+
+这里着重介绍一下最后一种, 前空后空的合并方式, 这个问题要比想象中的复杂一些
+
+看起来这个链表应该是下面这样的结构, A/B/C/D 分别代表 PRED SUCC 的出入节点
+
+![20230525145017](https://raw.githubusercontent.com/learner-lu/picbed/master/20230525145017.png)
+
+但实际上由于可能存在空闲块插入到链表头部的情况, 所以两个相邻的空闲块并不一定在链表中就是相邻的, 它们之间还可能隔了 N 个块
+
+![20230525145404](https://raw.githubusercontent.com/learner-lu/picbed/master/20230525145404.png)
+
+同时由于可能存在插入到头部的情况,所以甚至顺序可能都是反过来的
+
+![20230525145800](https://raw.githubusercontent.com/learner-lu/picbed/master/20230525145800.png)
+
+但是不要慌, 情况虽然很多但思路一定要清晰. 合并之后的块一定是 (PERD + x + SUCC), 这个新块(暂且叫Y)的 pred 和 succ 指针一定原先 PRED 块的位置的, 因为块一定是地址小到大的, 所以需要更新的只有 PRED 块的 pred 和 succ. 目前 PRED 块已经有 pred 和 succ 指针使其存在在这个链表当中了, 所以我们需要做的就是更新 SUCC 块及其前后的空闲块节点指针, 具体来说就是 `把C指向D`
+
+> 这里的 C 和 D 只是代指, 实际上是说更新 SUCC 块的前后空闲块的 pred 和 succ 指针, 让它们跳过 SUCC 块直接连接起来. 当然需要考虑边界情况
+
+### mm_malloc
+
+malloc 代码只有一个小变化, 由于增加了 pred succ 指针, 这两个指针虽然是在 payload 中不占空间, 但是最小块的大小也随之变化
+
+header + footer + pred + succ = WSIZE + WSIZE + DSIZE + DSIZE = 3 * DSIZE
+
+```c
+// 小于等于 DSIZE 的大小直接补齐 3*DSIZE
+if (size <= DSIZE) {
+   block_size = 3 * DSIZE;
+} else {
+   // DSIZE 对齐 + 头尾 DSIZE
+   block_size = (size + DSIZE - 1) / DSIZE * DSIZE + DSIZE;
+}
+```
+
+需要变化的是其中的 place 和 first_fit
+
+放置块的时候需要更新链表
+
+```c
+void place(void *bp, size_t size) {
+    size_t block_size = GET_SIZE(HDRP(bp));
+    size_t block_rest_size = block_size - size;
+    // 剩余块的大小 <= 最小块大小
+    if (block_rest_size < 3 * DSIZE) {
+        PUT(HDRP(bp), PACK(block_size, 1));
+        PUT(FTRP(bp), PACK(block_size, 1));
+
+        if (!PREV_FREE_BLKP(bp) && !NEXT_FREE_BLKP(bp)) {
+            heap_listp = NULL;
+        } else if (PREV_FREE_BLKP(bp) && !NEXT_FREE_BLKP(bp)) {
+            PUT_ADDR(SUCC(PREV_FREE_BLKP(bp)), 0);
+        } else if (!PREV_FREE_BLKP(bp) && NEXT_FREE_BLKP(bp)) {
+            PUT_ADDR(PRED(NEXT_FREE_BLKP(bp)), 0);
+            heap_listp = NEXT_FREE_BLKP(bp);
+        } else {
+            PUT_ADDR(SUCC(PREV_FREE_BLKP(bp)), NEXT_FREE_BLKP(bp));
+            PUT_ADDR(PRED(NEXT_FREE_BLKP(bp)), PREV_FREE_BLKP(bp));
+        }
+    } else {
+        // 分裂
+        PUT(HDRP(bp), PACK(size, 1));
+        PUT(FTRP(bp), PACK(size, 1));
+        void *next_bp = NEXT_BLKP(bp);
+        PUT(HDRP(next_bp), PACK(block_rest_size, 0));
+        PUT(FTRP(next_bp), PACK(block_rest_size, 0));
+        // 更新链表
+        PUT_ADDR(PRED(next_bp), VAL(PRED(bp)));
+        if (PREV_FREE_BLKP(bp)) {
+            PUT_ADDR(SUCC(PREV_FREE_BLKP(bp)), next_bp);
+        } else {
+            heap_listp = next_bp;
+        }
+        PUT_ADDR(SUCC(next_bp), VAL(SUCC(bp)));
+        if (NEXT_FREE_BLKP(bp)) {
+            PUT_ADDR(PRED(NEXT_FREE_BLKP(bp)), next_bp);
         }
     }
 }
+```
 
-/*
- * mm_realloc - Implemented simply in terms of mm_malloc and mm_free
- */
+首次适配的时候不再需要判断 alloc, 因为全部都是 free 的块, 只需要判断大小符合即可. 最后一个块的 succ 是 NULL 则说明到结尾了
+
+```c
+void *first_fit(size_t size) {
+    void *bp = heap_listp;
+
+    // 没有空闲块
+    if (bp == NULL) {
+        return NULL;
+    }
+
+    while (1) {
+        size_t block_size = GET_SIZE(HDRP(bp));
+        if (block_size >= size) {
+            return bp;
+        } else {
+            bp = NEXT_FREE_BLKP(bp);
+            if (bp == NULL) {
+                return NULL;
+            }
+        }
+    }
+}
+```
+
+### mm_realloc
+
+mm_free 没有变化, 因为修改的部分都在 coalesce 当中, mm_realloc 的变化也比较大, 主要是判断前后边界情况
+
+另外需要注意一点的是对于下一个块就是空闲块, 并且下一个块需要分裂的情况. 应该先记录 pred succ 指针的位置, 最后更新 header 和 footer, 因为如果先更新可能会覆盖原先的 pred 和 succ, 这样就会出现问题
+
+![20230525152508](https://raw.githubusercontent.com/learner-lu/picbed/master/20230525152508.png)
+
+```c
 void *mm_realloc(void *ptr, size_t size) {
     if (ptr == NULL) {
         return mm_malloc(size);
@@ -1177,8 +885,7 @@ void *mm_realloc(void *ptr, size_t size) {
         }
         return ptr;
     } else {
-        if (!GET_ALLOC(HDRP(NEXT_BLKP(ptr))) &&
-            (GET_SIZE(HDRP(NEXT_BLKP(ptr))) >= (size - block_size))) {
+        if (!GET_ALLOC(HDRP(NEXT_BLKP(ptr))) && (GET_SIZE(HDRP(NEXT_BLKP(ptr))) >= (size - block_size))) {
             // 下一个块就有空间
             size_t next_block_rest_size = GET_SIZE(HDRP(NEXT_BLKP(ptr))) + block_size - size;
             if (next_block_rest_size < 3 * DSIZE) {
@@ -1242,706 +949,17 @@ void *mm_realloc(void *ptr, size_t size) {
         }
     }
 }
-
-void place(void *bp, size_t size) {
-    size_t block_size = GET_SIZE(HDRP(bp));
-    size_t block_rest_size = block_size - size;
-    // 剩余块的大小 <= 最小块大小
-    if (block_rest_size < 3 * DSIZE) {
-        PUT(HDRP(bp), PACK(block_size, 1));
-        PUT(FTRP(bp), PACK(block_size, 1));
-
-        if (!PREV_FREE_BLKP(bp) && !NEXT_FREE_BLKP(bp)) {
-            heap_listp = NULL;
-        } else if (PREV_FREE_BLKP(bp) && !NEXT_FREE_BLKP(bp)) {
-            PUT_ADDR(SUCC(PREV_FREE_BLKP(bp)), 0);
-        } else if (!PREV_FREE_BLKP(bp) && NEXT_FREE_BLKP(bp)) {
-            PUT_ADDR(PRED(NEXT_FREE_BLKP(bp)), 0);
-            heap_listp = NEXT_FREE_BLKP(bp);
-        } else {
-            PUT_ADDR(SUCC(PREV_FREE_BLKP(bp)), NEXT_FREE_BLKP(bp));
-            PUT_ADDR(PRED(NEXT_FREE_BLKP(bp)), PREV_FREE_BLKP(bp));
-        }
-    } else {
-        // 分裂
-        PUT(HDRP(bp), PACK(size, 1));
-        PUT(FTRP(bp), PACK(size, 1));
-        void *next_bp = NEXT_BLKP(bp);
-        PUT(HDRP(next_bp), PACK(block_rest_size, 0));
-        PUT(FTRP(next_bp), PACK(block_rest_size, 0));
-        // 更新链表
-        PUT_ADDR(PRED(next_bp), VAL(PRED(bp)));
-        if (PREV_FREE_BLKP(bp)) {
-            PUT_ADDR(SUCC(PREV_FREE_BLKP(bp)), next_bp);
-        } else {
-            heap_listp = next_bp;
-        }
-        PUT_ADDR(SUCC(next_bp), VAL(SUCC(bp)));
-        if (NEXT_FREE_BLKP(bp)) {
-            PUT_ADDR(PRED(NEXT_FREE_BLKP(bp)), next_bp);
-        }
-    }
-}
-
-void *first_fit(size_t size) {
-    void *bp = heap_listp;
-
-    // 没有空闲块
-    if (bp == NULL) {
-        return NULL;
-    }
-
-    while (1) {
-        size_t block_size = GET_SIZE(HDRP(bp));
-        if (block_size >= size) {
-            return bp;
-        } else {
-            bp = NEXT_FREE_BLKP(bp);
-            if (bp == NULL) {
-                return NULL;
-            }
-        }
-    }
-}
 ```
 
-```c
-/*
- *  I implemented
- *  Seglist Allocators described in the ppt 
- *  
- *  - each size class has its own free list
- *  - one class for each two-power size 
- *  - {1},{2},{3,4},{5-8}, ..., {1025-2048}, ...
- *  
- *  - It is worth noting the difference between 
- *    (predecessor and successor) and (previous and next)
- *    (predecessor and successor) : pred and succ block in free list, 
- *    (previous and next) : previous and next block in heap memory
- * 
- * - Since we are not allowed to use any global or static arrays,
- *   I allocated a memory space in heap to keep these free lists (Or Seglist Allocators).
- *   This is described in visual text below.
- * 
- * -For blocks, I used the boundary tag coalescing technique.
- */
+### 实验结果
 
-/* ALLOCATED BLOCK, FREE BLOCK, SEGREGATED FREE LIST, HEAP STRUCTURE
+显式空闲链表就可以达到 90/100 的结果, 说实话有些令我惊讶. 这已经是一个可以令人接收的分数了, 不过既然书中也提到了其他的实现方式, 不妨也动手实现一下
 
- 1. Allocated Block 
- 
-             31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10  9  8  7  6  5  4  3  2  1  0
-            +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
- Header :   |                              size of the block                                       |  |  | 1|
-    bp ---> +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-            |                                                                                               |
-            |                                                                                               |
-            .                              Payload and padding                                              .
-            .                                                                                               .
-            .                                                                                               .
-            +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
- Footer :   |                              size of the block                                       |     | 1|
-            +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
- 
- 
- 2. Free block 
- 
-             31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10  9  8  7  6  5  4  3  2  1  0
-            +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
- Header :   |                              size of the block                                       |  |  | 0|
-      bp--> +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-            |                        pointer to pred block in free list                                     |
-    bp+4--> +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-            |                        pointer to succ block in free list                                     |
-            +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-            .                                                                                               .
-            .                                                                                               .
-            .                                                                                               .
-            +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
- Footer :   |                              size of the block                                       |     | 0|
-            +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+![20230524152405](https://raw.githubusercontent.com/learner-lu/picbed/master/20230524152405.png)
 
- 3. Segregated Free Lists 
-    (space is allocated in heap to keep this array of pointers)
-    (**free_lists points to first pointer in the array)
-    ----------------------------------------------------------
-    |  +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-    |  |size class 0  |size class 1  |      . . .
-    |  |(bp of blck 0 |(bp of blck 0 |              
-    |  | is kept here)|is kept here) |
-    |  +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+-
-    -----------------------------------------------------------
-              |               |     
-         +--+--+--+--+   +--+--+--+--+
-         | blck 0    |   | blck 0    |
-         +--+--+--+--+   +--+--+--+--+
-              |               |     
-         +--+--+--+--+   +--+--+--+--+
-         | blck 1    |   | blck 1    | 
-         +--+--+--+--+   +--+--+--+--+ 
+## 简单分离存储
 
- 4. Heap Memory After Free Lists
-    (prologue and epilogue blocks are tricks that eliminate the edge conditions
-    during coalescing)
-              31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10  9  8  7  6  5  4  3  2  1  0
-              +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-              |                               0 (Padding)                                            |  |  |  |
-              +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-              |                               8 (Prologue block)                                     |  |  | 1|
-*heap_listp ->+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-              |                               8 (Prologue block)                                     |  |  | 1|
-              +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-              .                                                                                               .
-              .                             Both Free and Allocated Blocks inmemory space                     .
-              .                                                                                               .
-              +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-              |                              0 (Epilogue block hdr)                                  |  |  | 1|
-              +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-*/
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <assert.h>
-#include <unistd.h>
-#include <string.h>
-
-
-#include "mm.h"
-#include "memlib.h"
-
-/*********************************************************
- * NOTE TO STUDENTS: Before you do anything else, please
- * provide your team information in the following struct.
- ********************************************************/
-
-team_t team = {
-    /* Team name */
-    "ateam",
-    /* First member's full name */
-    "Harry Bovik",
-    /* First member's email address */
-    "bovik@cs.cmu.edu",
-    /* Second member's full name (leave blank if none) */
-    "",
-    /* Second member's email address (leave blank if none) */
-    ""};
-
-
-/* single word (4) or double word (8) alignment */
-#define ALIGNMENT 8
-
-/* rounds up to the nearest multiple of ALIGNMENT */
-#define ALIGN(size) (((size) + (ALIGNMENT-1)) & ~0x7)
-#define SIZE_T_SIZE (ALIGN(sizeof(size_t)))
-
-/* Basic constants and macros*/
-#define WSIZE 4 /*Word and header/footer size (bytes) */
-#define DSIZE 8 /*Double word size (bytes) */
-#define INITCHUNKSIZE (1<<6)
-#define CHUNKSIZE (1<<12) /*Extend heap by this amount(bytes)*/
-
-#define MAXNUMBER 16
-
-#define MAX(x,y) ((x) > (y) ? (x) : (y) )
-#define MIN(x, y) ((x) < (y) ? (x) : (y))
-
-
-/*Pack a size and allocated bit into a word*/
-#define PACK(size, alloc) ((size) | (alloc))
-
-/*Read and write a word at address p*/
-#define GET(p) (*(unsigned int *)(p))
-#define PUT(p, val) (*(unsigned int *)(p) = (val))
-
-//put pointer ptr in p (just simple address)
-#define SET_PTR(p, ptr) (*(unsigned int *)(p) = (unsigned int)(ptr))
-
-/*Read the size and allocated fields from address p*/
-#define GET_SIZE(p) (GET(p) & ~0x7)
-#define GET_ALLOC(p) (GET(p) & 0x1)
-
-/*Given block ptr bp, compute address of its header and footer*/
-#define HDRP(bp) ((char *)(bp)-WSIZE)
-#define FTRP(bp) ((char *)(bp)+GET_SIZE(HDRP(bp))-DSIZE)
-
-/*Given block ptr bp, compute address(bp) of next and previous blocks*/
-#define NEXT_BLKP(bp) ((char *)(bp)+GET_SIZE(((char *)(bp)-WSIZE)))
-#define PREV_BLKP(bp) ((char *)(bp)-GET_SIZE(((char *)(bp)-DSIZE)))
-
-// Address of free block's predecessor and successor entries
-#define PRED_PTR(bp) ((char *)(bp))
-#define SUCC_PTR(bp) ((char *)(bp) + WSIZE)
-
-// Address of free block's predecessor and successor on the segregated list
-#define PRED(bp) (*(char **)(bp))
-#define SUCC(bp) (*(char **)(SUCC_PTR(bp)))
-
-//since we cannot use such thing as Array[i] = k,
-//these trivial pointer calculators are used to get and set
-//values from/tp free lists
-#define GET_FREE_LIST_PTR(i) (*(free_lists+i))
-#define SET_FREE_LIST_PTR(i, bp) (*(free_lists+i) = bp)
-
-/*Global variables*/
-static char *heap_listp = 0; 
-static char **free_lists;
-
-/*helper functions*/
-static void *extend_heap(size_t size);
-static void *coalesce(void *bp);
-static void *place(void *bp, size_t asize);
-static void add(void *bp, size_t size);
-static void delete(void *bp);
-
-void mm_check(int verbose);
-
-
-/* 
- * mm_init - initialize the malloc package.
- */
-int mm_init(void)
-{
-    int i;
-
-    //create space for keeping free lists 
-    if ((long)(free_lists = mem_sbrk(MAXNUMBER*sizeof(char *))) == -1){
-        return -1;
-    }
-    
-     // initialize the free list
-    for (int i = 0; i <= MAXNUMBER; i++) {
-	    SET_FREE_LIST_PTR(i, NULL);
-    }
-
-    // initial empty heap
-    if ((long)(heap_listp = mem_sbrk(4 * WSIZE)) == -1)
-        return -1;
-    
-    PUT(heap_listp, 0);                            /* Alignment padding */
-    PUT(heap_listp + (1 * WSIZE), PACK(DSIZE, 1)); /* Prologue header */
-    PUT(heap_listp + (2 * WSIZE), PACK(DSIZE, 1)); /* Prologue footer */
-    PUT(heap_listp + (3 * WSIZE), PACK(0, 1));     /* Epilogue header */
-    heap_listp += (2*WSIZE); 
-    
-    if (extend_heap(INITCHUNKSIZE) == NULL)
-        return -1;
-
-    // mm_check(1);
-    
-    return 0;
-}
-
-
-/* 
- * 
- *     
- * mm_malloc - Allocate a block with at least size bytes of payload 
- */
-void *mm_malloc(size_t size)
-{
-    size_t asize;      //adjust request block size to allow room for header and footer
-                      // and to satisfy alignment requirement.
-    size_t extendsize; //incase we need to extend heap 
-    void *bp = NULL;  
-    
-   
-    if (size == 0) {
-        return NULL;
-    }
-    
-    // satisfy alignment requirement
-    if (size <= DSIZE) {
-        asize = 2 * DSIZE;
-    } else {
-        asize = ALIGN(size+DSIZE);
-    }
-    //textbook-add overhead bytes and then round up to nearest multiple of 8
-    
-    int i = 0;
-    size_t searchsize = asize;
-
-    // search free lists for suitable free block
-    while (i < MAXNUMBER) {
-        if ((i == MAXNUMBER - 1) || ((searchsize <= 1) && 
-        (GET_FREE_LIST_PTR(i)!= NULL))) {
-            bp = GET_FREE_LIST_PTR(i);
-            
-            //in each size class
-            while ((bp != NULL) && (asize > GET_SIZE(HDRP(bp))))
-            {
-                bp = PRED(bp);
-            }
-            //found it!
-            if (bp != NULL){
-                //place requested block 
-                //(if there is an access, it will split in place())
-                bp = place(bp, asize);
-                //return the pointer of the newly allocated block
-                return bp;
-            }
-        }
-        
-        searchsize = searchsize >> 1;
-        i++;
-    }
-    
-    // if allocator cannot find a fit, extend the heap with 
-    //new free block
-    if (bp == NULL) {
-        extendsize = MAX(asize, CHUNKSIZE);
-        //place requested block in the new free block
-        if ((bp = extend_heap(extendsize)) == NULL)
-            return NULL;
-    }
-    
-    //(place() will optionally split the block)
-    bp = place(bp, asize);
-    
-    // mm_check(1);
-    
-    // return pointer to newly allocated block
-    return bp;
-}
-
-
-/*
- * mm_free - Freeing a block
- */
-void mm_free(void *bp)
-{
-   size_t size = GET_SIZE(HDRP(bp));
-    
-    //change header and footer to free 
-    PUT(HDRP(bp), PACK(size, 0));
-    PUT(FTRP(bp), PACK(size, 0));
-    
-    //add it to free lists
-    add(bp, size);
-
-    //incase there is free block in prev or next block 
-    coalesce(bp);
-    
-    return;
-}
-
-/*
- * mm_realloc : returns a pointer to an allocated region of 
- * at least size bytes
- * 
- */
-void *mm_realloc(void *bp, size_t size)
-{   
-    void *new_block = bp;
-    int remainder;
-
-    if (bp == NULL) { //the call is equivalent to mm_malloc(size)
-        return mm_malloc(size);
-    }
-    if (size == 0) { //the call is equivalent to mm_free(ptr)
-        mm_free(bp);
-        return NULL;
-    }
-
-    //to satisfy alignment
-    if (size <= DSIZE){
-        size = 2 * DSIZE;
-    }
-    else{
-        size = ALIGN(size + DSIZE);
-    }
-
-    //old block size is bigger
-    //I think just return the original block
-    if ((remainder = GET_SIZE(HDRP(bp)) - size) >= 0){
-        //PUT(HDRP(bp), PACK(size, 1));
-        //PUT(FTRP(bp), PACK(size, 1));
-        //mm_free(NEXT_BLKP(bp));
-        return bp;
-    }
-    //new block size is bigger and next block is not allocated
-    //use adjacent block to minimize external fragmentation
-    else if (!GET_ALLOC(HDRP(NEXT_BLKP(bp))) || !GET_SIZE(HDRP(NEXT_BLKP(bp)))){
-        if ((remainder = GET_SIZE(HDRP(bp)) + GET_SIZE(HDRP(NEXT_BLKP(bp))) - size) < 0){
-            if (extend_heap(MAX(-remainder, CHUNKSIZE)) == NULL){
-                return NULL;
-            }
-            remainder += MAX(-remainder, CHUNKSIZE);
-        }
-        delete(NEXT_BLKP(bp));
-        PUT(HDRP(bp), PACK(size + remainder, 1));
-        PUT(FTRP(bp), PACK(size + remainder, 1));
-    } 
-    //in this case where new block's size is bigger
-    //but we cannot use adjacent block, address will be different 
-    else{
-        new_block = mm_malloc(size);
-        memcpy(new_block, bp, GET_SIZE(HDRP(bp)));
-        mm_free(bp);
-    }
-
-    return new_block;
-    
-}
-
-/*helper function*/
-static void *extend_heap(size_t size)
-{
-    void *bp;
-    size_t asize; //adjusted size to maintain alignment               
-    
-    asize = ALIGN(size);
-    
-    if ((bp = mem_sbrk(asize)) == (void *)-1)
-        return NULL;
-    
-    /*Initialize free block header/footer and the epilogue header*/
-    PUT(HDRP(bp), PACK(asize, 0)); //Free block header
-    PUT(FTRP(bp), PACK(asize, 0)); //Free block footer 
-    PUT(HDRP(NEXT_BLKP(bp)), PACK(0, 1)); //New epilouge header
-    add(bp, asize);
-    
-    //in case previous block was free 
-    return coalesce(bp);
-}
-
-//add to free lists
-static void add(void *bp, size_t size) {
-    int i = 0;
-    void *curr = bp;
-    void *succ = NULL;
-    
-    // Select size class 
-    while ((i < MAXNUMBER - 1) && (size > 1)) {
-        size = size >> 1;
-        i++;
-    }
-    
-    //now we are in particular size class
-    //pred <- curr <- succ (we move that way)
-    curr = GET_FREE_LIST_PTR(i);
-    while ((curr != NULL) && (size > GET_SIZE(HDRP(curr)))) {
-        succ = curr;
-        curr = PRED(curr);
-    }
-    
-    // adding bp 
-    if (curr != NULL) {
-        if (succ != NULL) { //curr - bp - succ
-            SET_PTR(PRED_PTR(bp), curr);
-            SET_PTR(SUCC_PTR(curr), bp);
-            SET_PTR(SUCC_PTR(bp), succ);
-            SET_PTR(PRED_PTR(succ), bp);
-        } else { //adding at the end
-            SET_PTR(PRED_PTR(bp), curr);
-            SET_PTR(SUCC_PTR(curr), bp);
-            SET_PTR(SUCC_PTR(bp), NULL);
-            SET_FREE_LIST_PTR(i, bp);
-        }
-    } else {
-        if (succ != NULL) { //adding at the other end
-            SET_PTR(PRED_PTR(bp), NULL);
-            SET_PTR(SUCC_PTR(bp), succ);
-            SET_PTR(PRED_PTR(succ), bp);
-        } else { //this size class has no nodes
-            SET_PTR(PRED_PTR(bp), NULL);
-            SET_PTR(SUCC_PTR(bp), NULL);
-            SET_FREE_LIST_PTR(i, bp);
-        }
-    }
-    
-    return;
-}
-
-//delete from free list
-static void delete(void *bp) {
-    int i = 0;
-    size_t size = GET_SIZE(HDRP(bp));
-    
-    // select size class
-    while ((i < MAXNUMBER - 1) && (size > 1)) {
-        size >>= 1;
-        i++;
-    }
-    //delete node making changes to pred, succ pointers 
-    //pred <- curr <- succ (we move that way)
-    if (PRED(bp) != NULL) {
-        if (SUCC(bp) != NULL) {//pred - bp - succ => pred - succ
-            SET_PTR(SUCC_PTR(PRED(bp)), SUCC(bp));
-            SET_PTR(PRED_PTR(SUCC(bp)), PRED(bp));
-        } else {//deleting at the end
-            SET_PTR(SUCC_PTR(PRED(bp)), NULL);
-            SET_FREE_LIST_PTR(i, PRED(bp));
-        }
-    } else {
-        if (SUCC(bp) != NULL) { //deleting at the other end
-            SET_PTR(PRED_PTR(SUCC(bp)), NULL);
-        } else {//this size class has only bp node
-            SET_FREE_LIST_PTR(i, PRED(bp));
-        }
-    }
-    
-    return;
-}
-
-/*
-* this is done in physical heap memory
-* returns pointer to new free block
-* coalesce is called before it goes in the free list
-*/
-static void *coalesce(void *bp)
-{
-    size_t prev_alloc = GET_ALLOC(HDRP(PREV_BLKP(bp)));
-    size_t next_alloc = GET_ALLOC(HDRP(NEXT_BLKP(bp)));
-    size_t size = GET_SIZE(HDRP(bp));
-    
-    if (prev_alloc && next_alloc) { //both allocated                    
-        return bp;
-    }
-    else if (prev_alloc && !next_alloc) { //merge next block
-        delete(bp);
-        delete(NEXT_BLKP(bp));
-        size += GET_SIZE(HDRP(NEXT_BLKP(bp)));
-        PUT(HDRP(bp), PACK(size, 0));
-        PUT(FTRP(bp), PACK(size, 0));
-    } else if (!prev_alloc && next_alloc) { //merge with prev block            
-        delete(bp);
-        delete(PREV_BLKP(bp));
-        size += GET_SIZE(HDRP(PREV_BLKP(bp)));
-        PUT(FTRP(bp), PACK(size, 0));
-        PUT(HDRP(PREV_BLKP(bp)), PACK(size, 0));
-        bp = PREV_BLKP(bp);
-    } else {                      // merge with both
-        delete(bp);
-        delete(PREV_BLKP(bp));
-        delete(NEXT_BLKP(bp));
-        size += GET_SIZE(HDRP(PREV_BLKP(bp))) + GET_SIZE(HDRP(NEXT_BLKP(bp)));
-        PUT(HDRP(PREV_BLKP(bp)), PACK(size, 0));
-        PUT(FTRP(NEXT_BLKP(bp)), PACK(size, 0));
-        bp = PREV_BLKP(bp);
-    }
-    
-    add(bp, size);
-    
-    return bp;
-}
-
-/*place - place block of asize bytes at free block bp
-          split if remainder would be at least minimum block size*/
-static void *place(void *bp, size_t asize)
-{
-    size_t bp_size = GET_SIZE(HDRP(bp));
-    size_t remainder = bp_size - asize;
-    
-    delete(bp);
-    
-    
-    if (remainder <= DSIZE * 2) {
-        // Do not split block
-        PUT(HDRP(bp), PACK(bp_size, 1));
-        PUT(FTRP(bp), PACK(bp_size, 1));
-    }
-    /*
-     ususally we just do else here and split the block.
-     But there are cases like in binary-bal.rep, binary2-bal.rep
-
-    case :  
-     allocated <blocks> - (small size block or big size bock)
-     small - big - small - big - small - big
-
-     if we free this blocks in order small-big-small-big-small-bg 
-     it causes no problems.
-
-     However, if we free only the big blocks like below, 
-     small - big(freed) - small - big(freed) - small- 
-
-     Even if we want to use the big freed blocks together, we can't because
-     there are small allocated blocks in between.
-
-     If there is a allocate call to size bigger than big block,
-     - we have to find another free block.
-
-     So what I am trying to do here is put allocated blocks 
-     in continuous places so we can use the freed space 
-
-     small-small-small-small-big(freed)-big(freed)-
-
-     I set the size 96 to get the best result for binary-bal.rep 
-     and binary2-bal.rep
-     */
-     else if (asize >= 96) {
-        PUT(HDRP(bp), PACK(remainder, 0));
-        PUT(FTRP(bp), PACK(remainder, 0));
-        PUT(HDRP(NEXT_BLKP(bp)), PACK(asize, 1));
-        PUT(FTRP(NEXT_BLKP(bp)), PACK(asize, 1));
-        add(bp, remainder);
-        return NEXT_BLKP(bp);
-        
-    }
-    
-    else {
-        PUT(HDRP(bp), PACK(asize, 1));
-        PUT(FTRP(bp), PACK(asize, 1));
-        PUT(HDRP(NEXT_BLKP(bp)), PACK(remainder, 0));
-        PUT(FTRP(NEXT_BLKP(bp)), PACK(remainder, 0));
-        add(NEXT_BLKP(bp), remainder);
-    }
-    return bp;
-}
-
-//this function prints information about the block for debugging 
-static void printblock(void *bp) 
-{
-    size_t hsize, halloc, fsize, falloc;
-
-    // mm_check(0);
-    hsize = GET_SIZE(HDRP(bp));
-    halloc = GET_ALLOC(HDRP(bp));  
-    fsize = GET_SIZE(FTRP(bp));
-    falloc = GET_ALLOC(FTRP(bp));  
-
-    if (hsize == 0) {
-	printf("%p: EOL\n", bp);
-	return;
-    }
-
-    printf("%p: header: [%d:%c] footer: [%d:%c]\n", bp, 
-	hsize, (halloc ? 'a' : 'f'), 
-	fsize, (falloc ? 'a' : 'f')); 
-}
-
-//check if block is doubleword aligned and header match the footer
-static void checkblock(void *bp) 
-{
-    if ((size_t)bp % 8)
-	printf("Error: %p is not doubleword aligned\n", bp);
-    if (GET(HDRP(bp)) != GET(FTRP(bp)))
-	printf("Error: header does not match footer\n");
-}
-
-//minimal check of the heap for consistency
-void mm_check(int verbose){
-    char *bp = heap_listp;
-
-    if (verbose)
-	printf("Heap (%p):\n", heap_listp);
-
-    if ((GET_SIZE(HDRP(heap_listp)) != DSIZE) || !GET_ALLOC(HDRP(heap_listp)))
-	printf("Bad prologue header\n");
-    checkblock(heap_listp);
-
-    for (bp = heap_listp; GET_SIZE(HDRP(bp)) > 0; bp = NEXT_BLKP(bp)) {
-	if (verbose) 
-	    printblock(bp);
-	checkblock(bp);
-    }
-
-    if (verbose)
-	printblock(bp);
-    if ((GET_SIZE(HDRP(bp)) != 0) || !(GET_ALLOC(HDRP(bp))))
-	printf("Bad epilogue header\n");
-}
-```
-
+如果说显式空闲链表的
 
 ## 参考
 

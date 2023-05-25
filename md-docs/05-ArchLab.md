@@ -1,4 +1,4 @@
-# ArchitectureLab
+# ArchLab
 
 ## 前言
 
