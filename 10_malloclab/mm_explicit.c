@@ -221,11 +221,11 @@ void *mm_malloc(size_t size) {
 /*
  * mm_free - Freeing a block does nothing.
  */
-void mm_free(void *bp) {
-    size_t size = GET_SIZE(HDRP(bp));
-    PUT(HDRP(bp), PACK(size, 0));
-    PUT(FTRP(bp), PACK(size, 0));
-    coalesce(bp);
+void mm_free(void *ptr) {
+    size_t size = GET_SIZE(HDRP(ptr));
+    PUT(HDRP(ptr), PACK(size, 0));
+    PUT(FTRP(ptr), PACK(size, 0));
+    coalesce(ptr);
 }
 
 /*

@@ -961,6 +961,9 @@ void *mm_realloc(void *ptr, size_t size) {
 
 如果说显式空闲链表的
 
+[相同的问题](https://stackoverflow.com/questions/75966600/memory-allocator-simple-segregated-storage-how-do-you-infer-the-size-of-an-al)
+
 ## 参考
 
 - [CSAPP | Lab8-Malloc Lab 深入解析 - kccxin的文章 - 知乎](https://zhuanlan.zhihu.com/p/496366818)
+- https://moss.cs.iit.edu/cs351/slides/slides-malloc.pdf
