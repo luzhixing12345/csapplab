@@ -959,9 +959,35 @@ void *mm_realloc(void *ptr, size_t size) {
 
 ## 简单分离存储
 
-如果说显式空闲链表的
+如果说显式空闲链表的也存在一些不足之处, 那就是所有的空闲链表都链接在一起. 如果合适的空闲块排在很后面, 那么每次寻找都需要依次比较.
 
-[相同的问题](https://stackoverflow.com/questions/75966600/memory-allocator-simple-segregated-storage-how-do-you-infer-the-size-of-an-al)
+那么显然一种新的思路就是将这些空闲块按照大小分为几类, 也就是用多个空闲链表. 比如可以根据 2 的幂来划分: {1-31}, {32-63}, {64-127}, {128,255}, ...
+
+简单分离存储的思路是: 将每一个 CHUNK 分为等大的块, 比如全是 8/16/32. 这些块**不分割, 不合并**. 也就是说如果需要分配一个 33 字节大小的空闲, 那么就选择 64 大小的空闲链表, 找到一个空闲块
+
+![20230527151548](https://raw.githubusercontent.com/learner-lu/picbed/master/20230527151548.png)
+
+每一个空闲链表分别对应一类的块, 这样 malloc 寻找空闲块的时候可以先根据需要分配的 size 大小确定应该到哪一个链表中找, 再在这个链表中查询即可
+
+如下所示, 在堆的开头创建一小块数组用于存储分离链表头, 每一个链表指向一块区域, 区域中等大的分割为一个个小块, 单向链表连接
+
+![20230527152257](https://raw.githubusercontent.com/learner-lu/picbed/master/20230527152257.png)
+
+![20230527151814](https://raw.githubusercontent.com/learner-lu/picbed/master/20230527151814.png)
+
+**看起来这个思路比较好, 但是实现起来会有很大的问题!**
+
+首先书中提到了 "不需要头部和脚部" "由于每一个片中只有相同大小的块, 所以一个已分配的块的大小就可以从它的地址推断出来". 这句话是错的, 实际上当 free 的时候, 对于地址 32 它可能是 5th for 8/ 3rd for 16/ 1st for 32. 对于 0 来说他可能是任意大小的块的开头. **如果不使用其他信息记录不可能判断的出来需要释放的块有多大**. 笔者在 stackoverflow 找到了一个[相同的问题](https://stackoverflow.com/questions/75966600/memory-allocator-simple-segregated-storage-how-do-you-infer-the-size-of-an-al)
+
+这里是笔者对这个问题的[解答](https://stackoverflow.com/a/76334551/17869889)
+
+总结来说就是书上的说法有问题. 而且不建议读者尝试用这个方法实现, 笔者实现了一下, 使用的是添加头部. 虽然但是即使实现了测试用例也无法通过, realloc 的几个根本过不了, 因为这种方法就没有合并, 前面的 malloc 也可能会因为 out of memory 挂掉
+
+> 真是一段痛苦的经历, 读者不要尝试用这种方法了, 很不好!
+
+## 分离适配
+
+
 
 ## 参考
 

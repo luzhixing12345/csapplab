@@ -545,7 +545,6 @@ static void *place(void *bp, size_t asize) {
         PUT(FTRP(NEXT_BLKP(bp)), PACK(asize, 1));
         add(bp, remainder);
         return NEXT_BLKP(bp);
-
     }
 
     else {

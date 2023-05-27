@@ -342,17 +342,12 @@ void *first_fit(size_t size) {
         if (VAL(free_listp_i) == 0) {
             index++;
         } else {
-            void *bp = (void *)VAL(free_listp_i);
-            while (GET_SIZE(HDRP(bp)) < origin_size) {
-                bp = NEXT_FREE_BLKP(bp);
-                if (bp == NULL) {
-                    break;
-                }
+            if (GET_SIZE(HDRP(VAL(free_listp_i))) < origin_size) {
+                index++;
+            } else {
+                return (void*)VAL(free_listp_i);
             }
-            if (bp) {
-                return bp;
-            }
-            index++;
+            
         }
     }
     return NULL;
@@ -377,10 +372,34 @@ void delete (void *bp) {
 
 void insert(void *bp) {
     void *free_listp_i = get_freelist_index(GET_SIZE(HDRP(bp)));
-    PUT_ADDR(PRED(bp), 0);
-    PUT_ADDR(SUCC(bp), VAL(free_listp_i));
-    if (NEXT_FREE_BLKP(bp)) {
-        PUT_ADDR(PRED(NEXT_FREE_BLKP(bp)), bp);
+    void *curr_bp = (void *)VAL(free_listp_i);
+    if (curr_bp == NULL) {
+        PUT_ADDR(PRED(bp), 0);
+        PUT_ADDR(SUCC(bp), 0);
+        PUT_ADDR(free_listp_i, bp);
+    } else {
+        if (GET_SIZE(HDRP(curr_bp)) <= GET_SIZE(HDRP(bp))) {
+            PUT_ADDR(PRED(bp), 0);
+            PUT_ADDR(SUCC(bp), curr_bp);
+            PUT_ADDR(free_listp_i, bp);
+            PUT_ADDR(PRED(curr_bp), bp);
+        } else {
+            void *pred_bp = curr_bp;
+            curr_bp = NEXT_FREE_BLKP(curr_bp);
+            while (curr_bp && GET_SIZE(HDRP(curr_bp)) > GET_SIZE(HDRP(bp))) {
+                pred_bp = curr_bp;
+                curr_bp = NEXT_FREE_BLKP(curr_bp);
+            }
+            if (curr_bp == NULL) {
+                PUT_ADDR(SUCC(pred_bp), bp);
+                PUT_ADDR(PRED(bp), pred_bp);
+                PUT_ADDR(SUCC(bp), 0);
+            } else {
+                PUT_ADDR(SUCC(pred_bp), bp);
+                PUT_ADDR(PRED(bp), pred_bp);
+                PUT_ADDR(PRED(curr_bp), bp);
+                PUT_ADDR(SUCC(bp), curr_bp);
+            }
+        }
     }
-    PUT_ADDR(free_listp_i, bp);
 }
