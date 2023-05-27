@@ -13,7 +13,7 @@
 </head>
 
 <body class="light">
-    <div class="header-navigator"><ul><li><a href="#h1-0">MallocLab</a><ul><li><a href="#h2-1">前言</a><ul><li><a href="#h3-2">任务目标</a></li></ul><ul><li><a href="#h3-3">堆检查器</a></li></ul><ul><li><a href="#h3-4">memlib.c</a></li></ul></li></ul><ul><li><a href="#h2-5">前置知识</a></li></ul><ul><li><a href="#h2-6">隐式空闲链表</a><ul><li><a href="#h3-7">宏定义</a></li></ul><ul><li><a href="#h3-8">mm_init</a></li></ul><ul><li><a href="#h3-9">mm_malloc</a></li></ul><ul><li><a href="#h3-10">mm_free</a></li></ul><ul><li><a href="#h3-11">mm_realloc</a></li></ul><ul><li><a href="#h3-12">实验结果</a></li></ul></li></ul><ul><li><a href="#h2-13">显式空闲链表</a><ul><li><a href="#h3-14">宏定义</a></li></ul><ul><li><a href="#h3-15">mm_init</a></li></ul><ul><li><a href="#h3-16">mm_malloc</a></li></ul><ul><li><a href="#h3-17">mm_realloc</a></li></ul><ul><li><a href="#h3-18">实验结果</a></li></ul></li></ul><ul><li><a href="#h2-19">简单分离存储</a></li></ul><ul><li><a href="#h2-20">参考</a></li></ul></li></ul></div><div class='markdown-body'><h1 id="h1-0">MallocLab</h1><h2 id="h2-1">前言</h2><p>malloc lab是设计一个自己的用于分配和管理内存的malloc free的实验</p><p>在文件夹内可以看到两个short1-bal.rep short2-bal.rep的测试文件, 但这里的测试文件并不全, 在编译之前首先需要添加 <code>traces/</code> 文件夹, 可以在<a href="https://github.com/luzhixing12345/csapplab/tree/main/10_malloclab/traces" target="_blank">这里</a>找到 traces, 然后将移动到本实验的根目录, 然后修改config.h中的路径</p><pre><code class="language-c">#define TRACEDIR "traces/"</code></pre><pre><code class="language-bash">└── traces
+    <div class="header-navigator"><ul><li><a href="#h1-0">MallocLab</a><ul><li><a href="#h2-1">前言</a><ul><li><a href="#h3-2">任务目标</a></li></ul><ul><li><a href="#h3-3">堆检查器</a></li></ul><ul><li><a href="#h3-4">memlib.c</a></li></ul></li></ul><ul><li><a href="#h2-5">前置知识</a></li></ul><ul><li><a href="#h2-6">隐式空闲链表</a><ul><li><a href="#h3-7">宏定义</a></li></ul><ul><li><a href="#h3-8">mm_init</a></li></ul><ul><li><a href="#h3-9">mm_malloc</a></li></ul><ul><li><a href="#h3-10">mm_free</a></li></ul><ul><li><a href="#h3-11">mm_realloc</a></li></ul><ul><li><a href="#h3-12">实验结果</a></li></ul></li></ul><ul><li><a href="#h2-13">显式空闲链表</a><ul><li><a href="#h3-14">宏定义</a></li></ul><ul><li><a href="#h3-15">mm_init</a></li></ul><ul><li><a href="#h3-16">mm_malloc</a></li></ul><ul><li><a href="#h3-17">mm_realloc</a></li></ul><ul><li><a href="#h3-18">实验结果</a></li></ul></li></ul><ul><li><a href="#h2-19">简单分离存储</a></li></ul><ul><li><a href="#h2-20">分离适配</a><ul><li><a href="#h3-21">mm_init</a></li></ul><ul><li><a href="#h3-22">mm_malloc</a></li></ul></li></ul><ul><li><a href="#h2-23">参考</a></li></ul></li></ul></div><div class='markdown-body'><h1 id="h1-0">MallocLab</h1><h2 id="h2-1">前言</h2><p>malloc lab是设计一个自己的用于分配和管理内存的malloc free的实验</p><p>在文件夹内可以看到两个short1-bal.rep short2-bal.rep的测试文件, 但这里的测试文件并不全, 在编译之前首先需要添加 <code>traces/</code> 文件夹, 可以在<a href="https://github.com/luzhixing12345/csapplab/tree/main/10_malloclab/traces" target="_blank">这里</a>找到 traces, 然后将移动到本实验的根目录, 然后修改config.h中的路径</p><pre><code class="language-c">#define TRACEDIR "traces/"</code></pre><pre><code class="language-bash">└── traces
     ├── amptjp-bal.rep
     ├── binary-bal.rep
     ├── binary2-bal.rep
@@ -383,7 +383,13 @@ Perf index = 51 (util) + 24 (thru) = 75/100</code></pre><p>考虑一下导致分
         }
     }
     return bp;
-}</code></pre><p>这里着重介绍一下最后一种, 前空后空的合并方式, 这个问题要比想象中的复杂一些</p><p>看起来这个链表应该是下面这样的结构, A/B/C/D 分别代表 PRED SUCC 的出入节点</p><p><img src="https://raw.githubusercontent.com/learner-lu/picbed/master/20230525145017.png" alt="20230525145017"></p><p>但实际上由于可能存在空闲块插入到链表头部的情况, 所以两个相邻的空闲块并不一定在链表中就是相邻的, 它们之间还可能隔了 N 个块</p><p><img src="https://raw.githubusercontent.com/learner-lu/picbed/master/20230525145404.png" alt="20230525145404"></p><p>同时由于可能存在插入到头部的情况,所以甚至顺序可能都是反过来的</p><p><img src="https://raw.githubusercontent.com/learner-lu/picbed/master/20230525145800.png" alt="20230525145800"></p><p>但是不要慌, 情况虽然很多但思路一定要清晰. 合并之后的块一定是 (PERD + x + SUCC), 这个新块(暂且叫Y)的 pred 和 succ 指针一定原先 PRED 块的位置的, 因为块一定是地址小到大的, 所以需要更新的只有 PRED 块的 pred 和 succ. 目前 PRED 块已经有 pred 和 succ 指针使其存在在这个链表当中了, 所以我们需要做的就是更新 SUCC 块及其前后的空闲块节点指针, 具体来说就是 <code>把C指向D</code></p><blockquote><p>这里的 C 和 D 只是代指, 实际上是说更新 SUCC 块的前后空闲块的 pred 和 succ 指针, 让它们跳过 SUCC 块直接连接起来. 当然需要考虑边界情况</p></blockquote><h3 id="h3-16">mm_malloc</h3><p>malloc 代码没有变化, 需要变化的是其中的 place 和 first_fit</p><p>放置块的时候需要更新链表</p><pre><code class="language-c">void place(void *bp, size_t size) {
+}</code></pre><p>这里着重介绍一下最后一种, 前空后空的合并方式, 这个问题要比想象中的复杂一些</p><p>看起来这个链表应该是下面这样的结构, A/B/C/D 分别代表 PRED SUCC 的出入节点</p><p><img src="https://raw.githubusercontent.com/learner-lu/picbed/master/20230525145017.png" alt="20230525145017"></p><p>但实际上由于可能存在空闲块插入到链表头部的情况, 所以两个相邻的空闲块并不一定在链表中就是相邻的, 它们之间还可能隔了 N 个块</p><p><img src="https://raw.githubusercontent.com/learner-lu/picbed/master/20230525145404.png" alt="20230525145404"></p><p>同时由于可能存在插入到头部的情况,所以甚至顺序可能都是反过来的</p><p><img src="https://raw.githubusercontent.com/learner-lu/picbed/master/20230525145800.png" alt="20230525145800"></p><p>但是不要慌, 情况虽然很多但思路一定要清晰. 合并之后的块一定是 (PERD + x + SUCC), 这个新块(暂且叫Y)的 pred 和 succ 指针一定原先 PRED 块的位置的, 因为块一定是地址小到大的, 所以需要更新的只有 PRED 块的 pred 和 succ. 目前 PRED 块已经有 pred 和 succ 指针使其存在在这个链表当中了, 所以我们需要做的就是更新 SUCC 块及其前后的空闲块节点指针, 具体来说就是 <code>把C指向D</code></p><blockquote><p>这里的 C 和 D 只是代指, 实际上是说更新 SUCC 块的前后空闲块的 pred 和 succ 指针, 让它们跳过 SUCC 块直接连接起来. 当然需要考虑边界情况</p></blockquote><h3 id="h3-16">mm_malloc</h3><p>malloc 代码只有一个小变化, 由于增加了 pred succ 指针, 这两个指针虽然是在 payload 中不占空间, 但是最小块的大小也随之变化</p><p>header + footer + pred + succ = WSIZE + WSIZE + DSIZE + DSIZE = 3 * DSIZE</p><pre><code class="language-c">// 小于等于 DSIZE 的大小直接补齐 3*DSIZE
+if (size &lt;= DSIZE) {
+   block_size = 3 * DSIZE;
+} else {
+   // DSIZE 对齐 + 头尾 DSIZE
+   block_size = (size + DSIZE - 1) / DSIZE * DSIZE + DSIZE;
+}</code></pre><p>需要变化的是其中的 place 和 first_fit</p><p>放置块的时候需要更新链表</p><pre><code class="language-c">void place(void *bp, size_t size) {
     size_t block_size = GET_SIZE(HDRP(bp));
     size_t block_rest_size = block_size - size;
     // 剩余块的大小 &lt;= 最小块大小
@@ -437,7 +443,7 @@ Perf index = 51 (util) + 24 (thru) = 75/100</code></pre><p>考虑一下导致分
             }
         }
     }
-}</code></pre><h3 id="h3-17">mm_realloc</h3><p>mm_free 没有变化, 因为修改的部分都在 coalesce 当中, mm_realloc 的变化也比较大, 主要是判断前后边界情况</p><pre><code class="language-c">void *mm_realloc(void *ptr, size_t size) {
+}</code></pre><h3 id="h3-17">mm_realloc</h3><p>mm_free 没有变化, 因为修改的部分都在 coalesce 当中, mm_realloc 的变化也比较大, 主要是判断前后边界情况</p><p>另外需要注意一点的是对于下一个块就是空闲块, 并且下一个块需要分裂的情况. 应该先记录 pred succ 指针的位置, 最后更新 header 和 footer, 因为如果先更新可能会覆盖原先的 pred 和 succ, 这样就会出现问题</p><p><img src="https://raw.githubusercontent.com/learner-lu/picbed/master/20230525152508.png" alt="20230525152508"></p><pre><code class="language-c">void *mm_realloc(void *ptr, size_t size) {
     if (ptr == NULL) {
         return mm_malloc(size);
     }
@@ -534,7 +540,218 @@ Perf index = 51 (util) + 24 (thru) = 75/100</code></pre><p>考虑一下导致分
             return bp;
         }
     }
-}</code></pre><h3 id="h3-18">实验结果</h3><p>显式空闲链表就可以达到 90/100 的结果, 说实话有些令我惊讶. 这已经是一个可以令人接收的分数了, 不过既然书中也提到了其他的实现方式, 不妨也动手实现一下</p><p><img src="https://raw.githubusercontent.com/learner-lu/picbed/master/20230524152405.png" alt="20230524152405"></p><h2 id="h2-19">简单分离存储</h2><p>如果说显式空闲链表的</p><h2 id="h2-20">参考</h2><ul><li><a href="https://zhuanlan.zhihu.com/p/496366818" target="_blank">CSAPP | Lab8-Malloc Lab 深入解析 - kccxin的文章 - 知乎</a></li></ul></div>
+}</code></pre><h3 id="h3-18">实验结果</h3><p>显式空闲链表就可以达到 90/100 的结果, 说实话有些令我惊讶. 这已经是一个可以令人接收的分数了, 不过既然书中也提到了其他的实现方式, 不妨也动手实现一下</p><p><img src="https://raw.githubusercontent.com/learner-lu/picbed/master/20230524152405.png" alt="20230524152405"></p><h2 id="h2-19">简单分离存储</h2><p>如果说显式空闲链表的也存在一些不足之处, 那就是所有的空闲链表都链接在一起. 如果合适的空闲块排在很后面, 那么每次寻找都需要依次比较.</p><p>那么显然一种新的思路就是将这些空闲块按照大小分为几类, 也就是用多个空闲链表. 比如可以根据 2 的幂来划分: {1-31}, {32-63}, {64-127}, {128,255}, ...</p><p>简单分离存储的思路是: 将每一个 CHUNK 分为等大的块, 比如全是 8/16/32. 这些块<b>不分割, 不合并</b>. 也就是说如果需要分配一个 33 字节大小的空闲, 那么就选择 64 大小的空闲链表, 找到一个空闲块</p><p><img src="https://raw.githubusercontent.com/learner-lu/picbed/master/20230527151548.png" alt="20230527151548"></p><p>每一个空闲链表分别对应一类的块, 这样 malloc 寻找空闲块的时候可以先根据需要分配的 size 大小确定应该到哪一个链表中找, 再在这个链表中查询即可</p><p>如下所示, 在堆的开头创建一小块数组用于存储分离链表头, 每一个链表指向一块区域, 区域中等大的分割为一个个小块, 单向链表连接</p><p><img src="https://raw.githubusercontent.com/learner-lu/picbed/master/20230527152257.png" alt="20230527152257"></p><p><img src="https://raw.githubusercontent.com/learner-lu/picbed/master/20230527151814.png" alt="20230527151814"></p><p><b>看起来这个思路比较好, 但是实现起来会有很大的问题!</b></p><p>首先书中提到了 "不需要头部和脚部" "由于每一个片中只有相同大小的块, 所以一个已分配的块的大小就可以从它的地址推断出来". 这句话是错的, 实际上当 free 的时候, 对于地址 32 它可能是 5th for 8/ 3rd for 16/ 1st for 32. 对于 0 来说他可能是任意大小的块的开头. <b>如果不使用其他信息记录不可能判断的出来需要释放的块有多大</b>. 笔者在 stackoverflow 找到了一个<a href="https://stackoverflow.com/questions/75966600/memory-allocator-simple-segregated-storage-how-do-you-infer-the-size-of-an-al" target="_blank">相同的问题</a></p><p>这里是笔者对这个问题的<a href="https://stackoverflow.com/a/76334551/17869889" target="_blank">解答</a></p><p>总结来说就是书上的说法有问题. 而且不建议读者尝试用这个方法实现, 笔者实现了一下, 使用的是添加头部. 虽然但是即使实现了测试用例也无法通过, realloc 的几个根本过不了, 因为这种方法就没有合并, 前面的 malloc 也可能会因为 out of memory 挂掉</p><blockquote><p>真是一段痛苦的经历, 读者不要尝试用这种方法了, 很不好!</p></blockquote><h2 id="h2-20">分离适配</h2><p>这部分实现了好几版, 分别是</p><ul><li>最初版本 84 分的做法 <a href="https://github.com/luzhixing12345/csapplab/blob/main/10_malloclab/mm_seg_fit_84.c" target="_blank">mm_seg_fit_84.c</a></li></ul><ul><li>修改后的 93 分的做法 <a href="https://github.com/luzhixing12345/csapplab/blob/main/10_malloclab/mm_seg_fit_93.c" target="_blank">mm_seg_fit_93.c</a></li></ul><ul><li>另一个修改也是 93 分的做法 <a href="https://github.com/luzhixing12345/csapplab/blob/main/10_malloclab/mm_seg_fit_firstfit.c" target="_blank">mm_seg_fit_firstfit.c</a></li></ul><p>分离适配的方法思路也差不多, 不过更加合理的添加了对空闲块的分割和合并. 同样在开头添加一个数组用于存储分离链表头, 不过每一个链表都会指向一个对应的区间块, 比如根据 2 的幂来划分: {1-31}, {32-63}, {64-127}, {128,255}, 那么 0 号链表的所有空闲块都是 1-31 大小的, 2 号链表的所有空闲块都是 32-63 的.</p><p>malloc 的时候先根据 size 判断应该到哪一个链表中找, 如果能找到一个合适的块那么直接分配. 如果找不到则到下一个链表中找, 如果都找不到那么扩展堆.</p><p>与此同时考虑分割和合并的时候, 只需要把原先的块从对应的链表中删除, 再把合并后的块插入到合并后大小所对应的链表中即可.</p><p>下面先来介绍一下最初版本 84 分的做法 <a href="https://github.com/luzhixing12345/csapplab/blob/main/10_malloclab/mm_seg_fit_84.c" target="_blank">mm_seg_fit_84.c</a></p><h3 id="h3-21">mm_init</h3><p>初始化的时候只需要添加对于链表数组的初始化</p><pre><code class="language-c">#define MAX_FREELIST_NUMBER 16
+
+for (int i = 0; i &lt; MAX_FREELIST_NUMBER; i++) {
+   *(unsigned long *)((char *)free_listp + DSIZE * i) = 0;
+}</code></pre><p>合并的时候有较大的修改</p><pre><code class="language-c">void *coalesce(void *bp) {
+    size_t size = GET_SIZE(HDRP(bp));
+    size_t prev_alloc = GET_ALLOC(FTRP(PREV_BLKP(bp)));
+    size_t next_alloc = GET_ALLOC(HDRP(NEXT_BLKP(bp)));
+    // case 1: 前后都被占用, 加到链表头
+    if (prev_alloc && next_alloc) {
+        insert(bp);
+    } else if (prev_alloc && !next_alloc) {
+        // case 2: 前占后不占, 合并后面的块, 修改链表
+        size += GET_SIZE(HDRP(NEXT_BLKP(bp)));
+        void *next_bp = NEXT_BLKP(bp);
+        delete (next_bp);
+        PUT(HDRP(bp), PACK(size, 0));
+        PUT(FTRP(bp), PACK(size, 0));
+        // 更新链表
+        insert(bp);
+    } else if (!prev_alloc && next_alloc) {
+        // case 3: 前不占后占, 直接合并
+        delete (PREV_BLKP(bp));
+        size += GET_SIZE(HDRP(PREV_BLKP(bp)));
+        bp = PREV_BLKP(bp);
+        PUT(HDRP(bp), PACK(size, 0));
+        PUT(FTRP(bp), PACK(size, 0));
+        insert(bp);
+    } else {
+        // case 4: 前后都空, 合并三个空闲块, 更新第一个块的节点
+        void *pre_bp = PREV_BLKP(bp);
+        void *next_bp = NEXT_BLKP(bp);
+        delete (pre_bp);
+        delete (next_bp);
+        size += GET_SIZE(HDRP(pre_bp)) + GET_SIZE(FTRP(next_bp));
+        PUT(HDRP(pre_bp), PACK(size, 0));
+        PUT(FTRP(pre_bp), PACK(size, 0));
+        // 更新链表
+        insert(pre_bp);
+        bp = pre_bp;
+    }
+    return bp;
+}</code></pre><p>相比之前代码有了很大程度的精简, 其中函数 insert 和 delete 分别用于插入和删除</p><pre><code class="language-c">void delete (void *bp) {
+    void *free_listp_i = get_freelist_index(GET_SIZE(HDRP(bp)));
+    void *pre_bp = PREV_FREE_BLKP(bp);
+    void *next_bp = NEXT_FREE_BLKP(bp);
+    if (pre_bp && next_bp) {
+        PUT_ADDR(SUCC(pre_bp), next_bp);
+        PUT_ADDR(PRED(next_bp), pre_bp);
+    } else if (!pre_bp && next_bp) {
+        PUT_ADDR(PRED(next_bp), 0);
+        PUT_ADDR(free_listp_i, next_bp);
+    } else if (pre_bp && !next_bp) {
+        PUT_ADDR(SUCC(pre_bp), 0);
+    } else {
+        PUT_ADDR(free_listp_i, 0);
+    }
+}
+
+void insert(void *bp) {
+    void *free_listp_i = get_freelist_index(GET_SIZE(HDRP(bp)));
+    PUT_ADDR(PRED(bp), 0);
+    PUT_ADDR(SUCC(bp), VAL(free_listp_i));
+    if (NEXT_FREE_BLKP(bp)) {
+        PUT_ADDR(PRED(NEXT_FREE_BLKP(bp)), bp);
+    }
+    PUT_ADDR(free_listp_i, bp);
+}</code></pre><p>函数 get_freelist_index 的作用就是根据这个块找到对应的链表, 对于超大块的统一放在最后一个链表中</p><pre><code class="language-c">void *get_freelist_index(size_t size) {
+    size--;
+    int index = -5;
+    while (size) {
+        size = size &gt;&gt; 1;
+        index++;
+    }
+    if (index &gt; MAX_FREELIST_NUMBER - 1) {
+        index = MAX_FREELIST_NUMBER - 1;
+    }
+    return (void *)((char *)free_listp + index * DSIZE);
+}</code></pre><h3 id="h3-22">mm_malloc</h3><p>mm_malloc 函数主体没有改动, 其中的 place 函数有了变化</p><pre><code class="language-c">void place(void *bp, size_t size) {
+    size_t block_size = GET_SIZE(HDRP(bp));
+    size_t block_rest_size = block_size - size;
+    // 剩余块的大小 &lt;= 最小块大小
+    if (block_rest_size &lt; 3 * DSIZE) {
+        PUT(HDRP(bp), PACK(block_size, 1));
+        PUT(FTRP(bp), PACK(block_size, 1));
+        delete (bp);
+    } else {
+        // 分裂
+        delete (bp);
+        PUT(HDRP(bp), PACK(size, 1));
+        PUT(FTRP(bp), PACK(size, 1));
+        void *next_bp = NEXT_BLKP(bp);
+        PUT(HDRP(next_bp), PACK(block_rest_size, 0));
+        PUT(FTRP(next_bp), PACK(block_rest_size, 0));
+        // 更新链表
+        insert(next_bp);
+    }
+}</code></pre><p>以及首次适配算法有了很大改动, 先找到对应的 list, 如果当前list不满足则继续向后找, 都找不到扩展</p><pre><code class="language-c">void *first_fit(size_t size) {
+    size_t origin_size = size;
+    size--;
+    int index = -5;
+    while (size) {
+        size = size &gt;&gt; 1;
+        index++;
+    }
+    if (index &gt; MAX_FREELIST_NUMBER - 1) {
+        index = MAX_FREELIST_NUMBER - 1;
+    }
+    while (index &lt; MAX_FREELIST_NUMBER) {
+        void *free_listp_i = (void *)((char *)free_listp + index * DSIZE);
+        if (VAL(free_listp_i) == 0) {
+            index++;
+        } else {
+            void *bp = (void *)VAL(free_listp_i);
+            while (GET_SIZE(HDRP(bp)) &lt; origin_size) {
+                bp = NEXT_FREE_BLKP(bp);
+                if (bp == NULL) {
+                    break;
+                }
+            }
+            if (bp) {
+                return bp;
+            }
+            index++;
+        }
+    }
+    return NULL;
+}</code></pre><p>realloc 有变化, 不过也差不多, free 没有变化</p><p>这个方法测试下来只有 84 分, 令我有点奇怪. 看了下最后的 realloc 的 util 利用率很低. 感觉是我代码写错了, 但是真找不到哪里有问题了...</p><p><img src="https://raw.githubusercontent.com/learner-lu/picbed/master/20230527155630.png" alt="20230527155630"></p><p>后来根据一位<a href="https://github.com/sally20921/malloclab/blob/4a024b78140a14fef82943c8fc9a3e74e3ae737b/malloclab-handout/src/mm.c" target="_blank">大佬的实现</a>, 发现只需要在 place 中额外判断一下, 如果 size >= 96 那么直接反过来, 把分配的块放到最后面</p><pre><code class="language-c">void *place(void *bp, size_t size) {
+    size_t block_size = GET_SIZE(HDRP(bp));
+    size_t block_rest_size = block_size - size;
+    // 剩余块的大小 &lt;= 最小块大小
+    if (block_rest_size &lt; 3 * DSIZE) {
+        PUT(HDRP(bp), PACK(block_size, 1));
+        PUT(FTRP(bp), PACK(block_size, 1));
+        delete (bp);
+    } else if (size &gt;= 96) {
+        delete (bp);
+        PUT(HDRP(bp), PACK(block_rest_size, 0));
+        PUT(FTRP(bp), PACK(block_rest_size, 0));
+        insert(bp);
+        PUT(HDRP(NEXT_BLKP(bp)), PACK(size, 1));
+        PUT(FTRP(NEXT_BLKP(bp)), PACK(size, 1));
+        bp = NEXT_BLKP(bp);
+    } else {
+        // 分裂
+        delete (bp);
+        PUT(HDRP(bp), PACK(size, 1));
+        PUT(FTRP(bp), PACK(size, 1));
+        void *next_bp = NEXT_BLKP(bp);
+        PUT(HDRP(next_bp), PACK(block_rest_size, 0));
+        PUT(FTRP(next_bp), PACK(block_rest_size, 0));
+        // 更新链表
+        insert(next_bp);
+    }
+    return bp;
+}</code></pre><p>效果居然惊人的提到 93 分!</p><blockquote><p>修改后的 93 分的做法 <a href="https://github.com/luzhixing12345/csapplab/blob/main/10_malloclab/mm_seg_fit_93.c" target="_blank">mm_seg_fit_93.c</a></p></blockquote><p><img src="https://raw.githubusercontent.com/learner-lu/picbed/master/20230527160237.png" alt="20230527160237"></p><p>最后又参考了<a href="https://zhuanlan.zhihu.com/p/270267142" target="_blank">另一个大佬的题解</a>, 考虑修改 first_fit 的算法, 也就是在插入的时候按块大小排序, 然后这样 first_fit 的时候只需要判断第一个块是否满足即可</p><pre><code class="language-c">void insert(void *bp) {
+    void *free_listp_i = get_freelist_index(GET_SIZE(HDRP(bp)));
+    void *curr_bp = (void *)VAL(free_listp_i);
+    if (curr_bp == NULL) {
+        PUT_ADDR(PRED(bp), 0);
+        PUT_ADDR(SUCC(bp), 0);
+        PUT_ADDR(free_listp_i, bp);
+    } else {
+        if (GET_SIZE(HDRP(curr_bp)) &lt;= GET_SIZE(HDRP(bp))) {
+            PUT_ADDR(PRED(bp), 0);
+            PUT_ADDR(SUCC(bp), curr_bp);
+            PUT_ADDR(free_listp_i, bp);
+            PUT_ADDR(PRED(curr_bp), bp);
+        } else {
+            void *pred_bp = curr_bp;
+            curr_bp = NEXT_FREE_BLKP(curr_bp);
+            while (curr_bp && GET_SIZE(HDRP(curr_bp)) &gt; GET_SIZE(HDRP(bp))) {
+                pred_bp = curr_bp;
+                curr_bp = NEXT_FREE_BLKP(curr_bp);
+            }
+            if (curr_bp == NULL) {
+                PUT_ADDR(SUCC(pred_bp), bp);
+                PUT_ADDR(PRED(bp), pred_bp);
+                PUT_ADDR(SUCC(bp), 0);
+            } else {
+                PUT_ADDR(SUCC(pred_bp), bp);
+                PUT_ADDR(PRED(bp), pred_bp);
+                PUT_ADDR(PRED(curr_bp), bp);
+                PUT_ADDR(SUCC(bp), curr_bp);
+            }
+        }
+    }
+}</code></pre><pre><code class="language-c">void *first_fit(size_t size) {
+    size_t origin_size = size;
+    size--;
+    int index = -5;
+    while (size) {
+        size = size &gt;&gt; 1;
+        index++;
+    }
+    if (index &gt; MAX_FREELIST_NUMBER - 1) {
+        index = MAX_FREELIST_NUMBER - 1;
+    }
+    while (index &lt; MAX_FREELIST_NUMBER) {
+        void *free_listp_i = (void *)((char *)free_listp + index * DSIZE);
+        if (VAL(free_listp_i) == 0) {
+            index++;
+        } else {
+            if (GET_SIZE(HDRP(VAL(free_listp_i))) &lt; origin_size) {
+                index++;
+            } else {
+                return (void*)VAL(free_listp_i);
+            }
+        }
+    }
+    return NULL;
+}</code></pre><p>这种做法也是 93 分没有变化</p><p>也是 93 分的做法 <a href="https://github.com/luzhixing12345/csapplab/blob/main/10_malloclab/mm_seg_fit_firstfit.c" target="_blank">mm_seg_fit_firstfit.c</a></p><h2 id="h2-23">参考</h2><ul><li><a href="https://zhuanlan.zhihu.com/p/496366818" target="_blank">CSAPP | Lab8-Malloc Lab 深入解析 - kccxin的文章 - 知乎</a></li></ul><ul><li><a href="https://moss.cs.iit.edu/cs351/slides/slides-malloc.pdf" target="_blank">https://moss.cs.iit.edu/cs351/slides/slides-malloc.pdf</a></li></ul><ul><li><a href="https://zhuanlan.zhihu.com/p/270267142" target="_blank">MallocLab详结 - Sisyphean的文章 - 知乎</a></li></ul></div>
     <div class="dir-tree"><ul><li><a href="../../md-docs/README" >README</a></li></ul><ul><li><a href="../../md-docs/01-DataLab" >01-DataLab</a></li></ul><ul><li><a href="../../md-docs/02-BombLab" >02-BombLab</a></li></ul><ul><li><a href="../../md-docs/03-AttackLab" >03-AttackLab</a></li></ul><ul><li><a href="../../md-docs/04-BufferLab" >04-BufferLab</a></li></ul><ul><li><a href="../../md-docs/05-ArchLab" >05-ArchLab</a></li></ul><ul><li><a href="../../md-docs/06-ArchY86Lab" >06-ArchY86Lab</a></li></ul><ul><li><a href="../../md-docs/07-CacheLab" >07-CacheLab</a></li></ul><ul><li><a href="../../md-docs/08-PerfLab" >08-PerfLab</a></li></ul><ul><li><a href="../../md-docs/09-ShellLab" >09-ShellLab</a></li></ul><ul><li><a href="../../md-docs/10-MallocLab" >10-MallocLab</a></li></ul><ul><li><a href="../../md-docs/11-ProxyLab" >11-ProxyLab</a></li></ul></div>
     <div class="zood"><a class="" href="https://github.com/luzhixing12345/zood" target="_blank">zood</a></div>
     <script type="text/javascript" src="../../../js/next_front.js"></script><script>addLink("../../md-docs/09-ShellLab","../../md-docs/11-ProxyLab","ab")</script><script type="text/javascript" src="../../../js/change_mode.js"></script><script>addChangeModeButton("../../../img/sun.png","../../../img/moon.png")</script><script type="text/javascript" src="../../../js/copy_code.js"></script><script>addCodeCopy("../../../img/before_copy.png","../../../img/after_copy.png")</script><script type="text/javascript" src="../../../js/navigator.js"></script><script type="text/javascript" src="../../../js/prism.js"></script><script type="text/javascript" src="../../../js/picture_preview.js"></script><script type="text/javascript" src="../../../js/check_box.js"></script>

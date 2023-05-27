@@ -987,9 +987,309 @@ void *mm_realloc(void *ptr, size_t size) {
 
 ## 分离适配
 
+这部分实现了好几版, 分别是
 
+- 最初版本 84 分的做法 [mm_seg_fit_84.c](https://github.com/luzhixing12345/csapplab/blob/main/10_malloclab/mm_seg_fit_84.c)
+- 修改后的 93 分的做法 [mm_seg_fit_93.c](https://github.com/luzhixing12345/csapplab/blob/main/10_malloclab/mm_seg_fit_93.c)
+- 另一个修改也是 93 分的做法 [mm_seg_fit_firstfit.c](https://github.com/luzhixing12345/csapplab/blob/main/10_malloclab/mm_seg_fit_firstfit.c)
+
+分离适配的方法思路也差不多, 不过更加合理的添加了对空闲块的分割和合并. 同样在开头添加一个数组用于存储分离链表头, 不过每一个链表都会指向一个对应的区间块, 比如根据 2 的幂来划分: {1-31}, {32-63}, {64-127}, {128,255}, 那么 0 号链表的所有空闲块都是 1-31 大小的, 2 号链表的所有空闲块都是 32-63 的.
+
+malloc 的时候先根据 size 判断应该到哪一个链表中找, 如果能找到一个合适的块那么直接分配. 如果找不到则到下一个链表中找, 如果都找不到那么扩展堆.
+
+与此同时考虑分割和合并的时候, 只需要把原先的块从对应的链表中删除, 再把合并后的块插入到合并后大小所对应的链表中即可.
+
+下面先来介绍一下最初版本 84 分的做法 [mm_seg_fit_84.c](https://github.com/luzhixing12345/csapplab/blob/main/10_malloclab/mm_seg_fit_84.c)
+
+### mm_init
+
+初始化的时候只需要添加对于链表数组的初始化
+
+```c
+#define MAX_FREELIST_NUMBER 16
+
+for (int i = 0; i < MAX_FREELIST_NUMBER; i++) {
+   *(unsigned long *)((char *)free_listp + DSIZE * i) = 0;
+}
+```
+
+合并的时候有较大的修改
+
+```c
+void *coalesce(void *bp) {
+    size_t size = GET_SIZE(HDRP(bp));
+    size_t prev_alloc = GET_ALLOC(FTRP(PREV_BLKP(bp)));
+    size_t next_alloc = GET_ALLOC(HDRP(NEXT_BLKP(bp)));
+
+    // case 1: 前后都被占用, 加到链表头
+    if (prev_alloc && next_alloc) {
+        insert(bp);
+    } else if (prev_alloc && !next_alloc) {
+        // case 2: 前占后不占, 合并后面的块, 修改链表
+        size += GET_SIZE(HDRP(NEXT_BLKP(bp)));
+        void *next_bp = NEXT_BLKP(bp);
+        delete (next_bp);
+        PUT(HDRP(bp), PACK(size, 0));
+        PUT(FTRP(bp), PACK(size, 0));
+        // 更新链表
+        insert(bp);
+    } else if (!prev_alloc && next_alloc) {
+        // case 3: 前不占后占, 直接合并
+        delete (PREV_BLKP(bp));
+        size += GET_SIZE(HDRP(PREV_BLKP(bp)));
+        bp = PREV_BLKP(bp);
+        PUT(HDRP(bp), PACK(size, 0));
+        PUT(FTRP(bp), PACK(size, 0));
+        insert(bp);
+    } else {
+        // case 4: 前后都空, 合并三个空闲块, 更新第一个块的节点
+        void *pre_bp = PREV_BLKP(bp);
+        void *next_bp = NEXT_BLKP(bp);
+        delete (pre_bp);
+        delete (next_bp);
+        size += GET_SIZE(HDRP(pre_bp)) + GET_SIZE(FTRP(next_bp));
+        PUT(HDRP(pre_bp), PACK(size, 0));
+        PUT(FTRP(pre_bp), PACK(size, 0));
+        // 更新链表
+        insert(pre_bp);
+        bp = pre_bp;
+    }
+    return bp;
+}
+```
+
+相比之前代码有了很大程度的精简, 其中函数 insert 和 delete 分别用于插入和删除
+
+```c
+void delete (void *bp) {
+    void *free_listp_i = get_freelist_index(GET_SIZE(HDRP(bp)));
+    void *pre_bp = PREV_FREE_BLKP(bp);
+    void *next_bp = NEXT_FREE_BLKP(bp);
+    if (pre_bp && next_bp) {
+        PUT_ADDR(SUCC(pre_bp), next_bp);
+        PUT_ADDR(PRED(next_bp), pre_bp);
+    } else if (!pre_bp && next_bp) {
+        PUT_ADDR(PRED(next_bp), 0);
+        PUT_ADDR(free_listp_i, next_bp);
+    } else if (pre_bp && !next_bp) {
+        PUT_ADDR(SUCC(pre_bp), 0);
+    } else {
+        PUT_ADDR(free_listp_i, 0);
+    }
+}
+
+void insert(void *bp) {
+    void *free_listp_i = get_freelist_index(GET_SIZE(HDRP(bp)));
+    PUT_ADDR(PRED(bp), 0);
+    PUT_ADDR(SUCC(bp), VAL(free_listp_i));
+    if (NEXT_FREE_BLKP(bp)) {
+        PUT_ADDR(PRED(NEXT_FREE_BLKP(bp)), bp);
+    }
+    PUT_ADDR(free_listp_i, bp);
+}
+```
+
+函数 get_freelist_index 的作用就是根据这个块找到对应的链表, 对于超大块的统一放在最后一个链表中
+
+```c
+void *get_freelist_index(size_t size) {
+    size--;
+    int index = -5;
+    while (size) {
+        size = size >> 1;
+        index++;
+    }
+    if (index > MAX_FREELIST_NUMBER - 1) {
+        index = MAX_FREELIST_NUMBER - 1;
+    }
+    return (void *)((char *)free_listp + index * DSIZE);
+}
+```
+
+### mm_malloc
+
+mm_malloc 函数主体没有改动, 其中的 place 函数有了变化
+
+```c
+void place(void *bp, size_t size) {
+    size_t block_size = GET_SIZE(HDRP(bp));
+    size_t block_rest_size = block_size - size;
+    // 剩余块的大小 <= 最小块大小
+    if (block_rest_size < 3 * DSIZE) {
+        PUT(HDRP(bp), PACK(block_size, 1));
+        PUT(FTRP(bp), PACK(block_size, 1));
+        delete (bp);
+    } else {
+        // 分裂
+        delete (bp);
+        PUT(HDRP(bp), PACK(size, 1));
+        PUT(FTRP(bp), PACK(size, 1));
+        void *next_bp = NEXT_BLKP(bp);
+        PUT(HDRP(next_bp), PACK(block_rest_size, 0));
+        PUT(FTRP(next_bp), PACK(block_rest_size, 0));
+        // 更新链表
+        insert(next_bp);
+    }
+}
+```
+
+以及首次适配算法有了很大改动, 先找到对应的 list, 如果当前list不满足则继续向后找, 都找不到扩展
+
+```c
+void *first_fit(size_t size) {
+    size_t origin_size = size;
+    size--;
+    int index = -5;
+    while (size) {
+        size = size >> 1;
+        index++;
+    }
+    if (index > MAX_FREELIST_NUMBER - 1) {
+        index = MAX_FREELIST_NUMBER - 1;
+    }
+
+    while (index < MAX_FREELIST_NUMBER) {
+        void *free_listp_i = (void *)((char *)free_listp + index * DSIZE);
+        if (VAL(free_listp_i) == 0) {
+            index++;
+        } else {
+            void *bp = (void *)VAL(free_listp_i);
+            while (GET_SIZE(HDRP(bp)) < origin_size) {
+                bp = NEXT_FREE_BLKP(bp);
+                if (bp == NULL) {
+                    break;
+                }
+            }
+            if (bp) {
+                return bp;
+            }
+            index++;
+        }
+    }
+    return NULL;
+}
+```
+
+realloc 有变化, 不过也差不多, free 没有变化
+
+这个方法测试下来只有 84 分, 令我有点奇怪. 看了下最后的 realloc 的 util 利用率很低. 感觉是我代码写错了, 但是真找不到哪里有问题了...
+
+![20230527155630](https://raw.githubusercontent.com/learner-lu/picbed/master/20230527155630.png)
+
+后来根据一位[大佬的实现](https://github.com/sally20921/malloclab/blob/4a024b78140a14fef82943c8fc9a3e74e3ae737b/malloclab-handout/src/mm.c), 发现只需要在 place 中额外判断一下, 如果 size >= 96 那么直接反过来, 把分配的块放到最后面
+
+```c
+void *place(void *bp, size_t size) {
+    size_t block_size = GET_SIZE(HDRP(bp));
+    size_t block_rest_size = block_size - size;
+    // 剩余块的大小 <= 最小块大小
+    if (block_rest_size < 3 * DSIZE) {
+        PUT(HDRP(bp), PACK(block_size, 1));
+        PUT(FTRP(bp), PACK(block_size, 1));
+        delete (bp);
+    } else if (size >= 96) {
+        delete (bp);
+        PUT(HDRP(bp), PACK(block_rest_size, 0));
+        PUT(FTRP(bp), PACK(block_rest_size, 0));
+        insert(bp);
+        PUT(HDRP(NEXT_BLKP(bp)), PACK(size, 1));
+        PUT(FTRP(NEXT_BLKP(bp)), PACK(size, 1));
+        bp = NEXT_BLKP(bp);
+    } else {
+        // 分裂
+        delete (bp);
+        PUT(HDRP(bp), PACK(size, 1));
+        PUT(FTRP(bp), PACK(size, 1));
+        void *next_bp = NEXT_BLKP(bp);
+        PUT(HDRP(next_bp), PACK(block_rest_size, 0));
+        PUT(FTRP(next_bp), PACK(block_rest_size, 0));
+        // 更新链表
+        insert(next_bp);
+    }
+    return bp;
+}
+```
+
+效果居然惊人的提到 93 分!
+
+> 修改后的 93 分的做法 [mm_seg_fit_93.c](https://github.com/luzhixing12345/csapplab/blob/main/10_malloclab/mm_seg_fit_93.c)
+
+![20230527160237](https://raw.githubusercontent.com/learner-lu/picbed/master/20230527160237.png)
+
+最后又参考了[另一个大佬的题解](https://zhuanlan.zhihu.com/p/270267142), 考虑修改 first_fit 的算法, 也就是在插入的时候按块大小排序, 然后这样 first_fit 的时候只需要判断第一个块是否满足即可
+
+```c
+void insert(void *bp) {
+    void *free_listp_i = get_freelist_index(GET_SIZE(HDRP(bp)));
+    void *curr_bp = (void *)VAL(free_listp_i);
+    if (curr_bp == NULL) {
+        PUT_ADDR(PRED(bp), 0);
+        PUT_ADDR(SUCC(bp), 0);
+        PUT_ADDR(free_listp_i, bp);
+    } else {
+        if (GET_SIZE(HDRP(curr_bp)) <= GET_SIZE(HDRP(bp))) {
+            PUT_ADDR(PRED(bp), 0);
+            PUT_ADDR(SUCC(bp), curr_bp);
+            PUT_ADDR(free_listp_i, bp);
+            PUT_ADDR(PRED(curr_bp), bp);
+        } else {
+            void *pred_bp = curr_bp;
+            curr_bp = NEXT_FREE_BLKP(curr_bp);
+            while (curr_bp && GET_SIZE(HDRP(curr_bp)) > GET_SIZE(HDRP(bp))) {
+                pred_bp = curr_bp;
+                curr_bp = NEXT_FREE_BLKP(curr_bp);
+            }
+            if (curr_bp == NULL) {
+                PUT_ADDR(SUCC(pred_bp), bp);
+                PUT_ADDR(PRED(bp), pred_bp);
+                PUT_ADDR(SUCC(bp), 0);
+            } else {
+                PUT_ADDR(SUCC(pred_bp), bp);
+                PUT_ADDR(PRED(bp), pred_bp);
+                PUT_ADDR(PRED(curr_bp), bp);
+                PUT_ADDR(SUCC(bp), curr_bp);
+            }
+        }
+    }
+}
+```
+
+```c
+void *first_fit(size_t size) {
+    size_t origin_size = size;
+    size--;
+    int index = -5;
+    while (size) {
+        size = size >> 1;
+        index++;
+    }
+    if (index > MAX_FREELIST_NUMBER - 1) {
+        index = MAX_FREELIST_NUMBER - 1;
+    }
+
+    while (index < MAX_FREELIST_NUMBER) {
+        void *free_listp_i = (void *)((char *)free_listp + index * DSIZE);
+        if (VAL(free_listp_i) == 0) {
+            index++;
+        } else {
+            if (GET_SIZE(HDRP(VAL(free_listp_i))) < origin_size) {
+                index++;
+            } else {
+                return (void*)VAL(free_listp_i);
+            }
+            
+        }
+    }
+    return NULL;
+}
+```
+
+这种做法也是 93 分没有变化
+
+也是 93 分的做法 [mm_seg_fit_firstfit.c](https://github.com/luzhixing12345/csapplab/blob/main/10_malloclab/mm_seg_fit_firstfit.c)
 
 ## 参考
 
 - [CSAPP | Lab8-Malloc Lab 深入解析 - kccxin的文章 - 知乎](https://zhuanlan.zhihu.com/p/496366818)
 - https://moss.cs.iit.edu/cs351/slides/slides-malloc.pdf
+- [MallocLab详结 - Sisyphean的文章 - 知乎](https://zhuanlan.zhihu.com/p/270267142)
