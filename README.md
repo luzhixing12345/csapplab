@@ -2,9 +2,7 @@
 
 csapplab 实验笔记: https://luzhixing12345.github.io/csapplab
 
-本仓库是一份代码存档, 您可阅读完整实验报告
-
-笔者博客有一份相同的存档链接: https://luzhixing12345.github.io/tags/CSAPP/
+本仓库也是一份代码存档, 您可以在这里找到所有的代码实现
 
 ## 获取资源
 
@@ -18,5 +16,6 @@ csapplab 实验笔记: https://luzhixing12345.github.io/csapplab
 
 环境配置一直是令人恼火的,有大佬写过相关说明做好了docker镜像,这里直接引用他们的文章,如果配置环境吃力的朋友可以看看
 
-- https://zhuanlan.zhihu.com/p/505497911
-- https://zhuanlan.zhihu.com/p/339047608
+- [CSAPP一键环境配置、完成8个lab总结](https://zhuanlan.zhihu.com/p/505497911)
+- [CSAPP:Lab0 -Docker搭建纯净Linux环境](https://zhuanlan.zhihu.com/p/340283308)
+- [CSAPP:Lab1 -DataLab 超详解](https://zhuanlan.zhihu.com/p/339047608)

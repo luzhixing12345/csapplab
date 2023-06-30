@@ -223,7 +223,7 @@ void *best_fit(size_t size) {
     PUT(HDRP(ptr), PACK(size, 0));
     PUT(FTRP(ptr), PACK(size, 0));
     coalesce(ptr);
-}</code></pre><h3 id="h3-11">mm_realloc</h3><p>mm_realloc 的实现稍微复杂一些, 首先回顾一下 realloc 的时候可能出现的情况</p><ul><li>ptr == NULL, 等同于 mm_malloc</li></ul><ul><li>size == 0, 等同于 mm_free</li></ul><ul><li>ptr != NULL && size != 0</li></ul><p>对于最后一种情况再分类讨论一下</p><ol start="1"><li>size == block_size: 直接返回</li></ol><ol start="2"><li>size < block_size: 在当前块中修改, 同时需要注意一下是否需要分裂</li></ol><ol start="3"><li>size > block_size:<ul><li>下一个块是否是空闲且空间足够, 如果足够则合并后面的块, 同时需要注意一下是否需要分裂</li></ul><ul><li>重新 mm_malloc 一个新的块, 然后把之前的使用 memcpy 复制到新的块, 释放原先的块</li></ul></li></ol><p>最后需要注意一点的是 <code>memcpy(bp, ptr, block_size - DSIZE)</code>, 这里的复制的大小是 block_size - DSIZE, 这是因为 block_size 实际上是整个分配块的大小, 也就是 header + payload + padding + footer 的大小, 实际有效的分配空间是 payload + padding, 这部分才是需要copy过去的大小, 因此对于 ptr 这个指针的位置复制 block_size - DSIZE 空间即可</p><pre><code class="language-c">void *mm_realloc(void *ptr, size_t size) {
+}</code></pre><h3 id="h3-11">mm_realloc</h3><p>mm_realloc 的实现稍微复杂一些, 首先回顾一下 realloc 的时候可能出现的情况</p><ul><li>ptr == NULL, 等同于 mm_malloc</li></ul><ul><li>size == 0, 等同于 mm_free</li></ul><ul><li>ptr != NULL && size != 0</li></ul><p>对于最后一种情况再分类讨论一下</p><ol start="1"><li>size == block_size: 直接返回</li></ol><ol start="2"><li>size &lt block_size: 在当前块中修改, 同时需要注意一下是否需要分裂</li></ol><ol start="3"><li>size &gt block_size:<ul><li>下一个块是否是空闲且空间足够, 如果足够则合并后面的块, 同时需要注意一下是否需要分裂</li></ul><ul><li>重新 mm_malloc 一个新的块, 然后把之前的使用 memcpy 复制到新的块, 释放原先的块</li></ul></li></ol><p>最后需要注意一点的是 <code>memcpy(bp, ptr, block_size - DSIZE)</code>, 这里的复制的大小是 block_size - DSIZE, 这是因为 block_size 实际上是整个分配块的大小, 也就是 header + payload + padding + footer 的大小, 实际有效的分配空间是 payload + padding, 这部分才是需要copy过去的大小, 因此对于 ptr 这个指针的位置复制 block_size - DSIZE 空间即可</p><pre><code class="language-c">void *mm_realloc(void *ptr, size_t size) {
     if (ptr == NULL) {
         return mm_malloc(size);
     }
@@ -667,7 +667,7 @@ void insert(void *bp) {
         }
     }
     return NULL;
-}</code></pre><p>realloc 有变化, 不过也差不多, free 没有变化</p><p>这个方法测试下来只有 84 分, 令我有点奇怪. 看了下最后的 realloc 的 util 利用率很低. 感觉是我代码写错了, 但是真找不到哪里有问题了...</p><p><img src="https://raw.githubusercontent.com/learner-lu/picbed/master/20230527155630.png" alt="20230527155630"></p><p>后来根据一位<a href="https://github.com/sally20921/malloclab/blob/4a024b78140a14fef82943c8fc9a3e74e3ae737b/malloclab-handout/src/mm.c" target="_blank">大佬的实现</a>, 发现只需要在 place 中额外判断一下, 如果 size >= 96 那么直接反过来, 把分配的块放到最后面</p><pre><code class="language-c">void *place(void *bp, size_t size) {
+}</code></pre><p>realloc 有变化, 不过也差不多, free 没有变化</p><p>这个方法测试下来只有 84 分, 令我有点奇怪. 看了下最后的 realloc 的 util 利用率很低. 感觉是我代码写错了, 但是真找不到哪里有问题了...</p><p><img src="https://raw.githubusercontent.com/learner-lu/picbed/master/20230527155630.png" alt="20230527155630"></p><p>后来根据一位<a href="https://github.com/sally20921/malloclab/blob/4a024b78140a14fef82943c8fc9a3e74e3ae737b/malloclab-handout/src/mm.c" target="_blank">大佬的实现</a>, 发现只需要在 place 中额外判断一下, 如果 size &gt= 96 那么直接反过来, 把分配的块放到最后面</p><pre><code class="language-c">void *place(void *bp, size_t size) {
     size_t block_size = GET_SIZE(HDRP(bp));
     size_t block_rest_size = block_size - size;
     // 剩余块的大小 &lt;= 最小块大小
