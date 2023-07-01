@@ -1,21 +1,10 @@
 # ArchLab
 
-05 06 的实验是关于体系结构的实验可能做的人不会很多, 指令集/处理器对于相当一部分人来说都是很陌生的, 直接上手 Y86 汇编应该是相当吃力的, 因此建议读者先阅读一下第四章处理器体系结构, 再结合实验所提供的文档继续完成实验
+05 06 的实验很接近, 本节主要介绍有关体系结构的基础知识以及 Y86-64 的设计, 所有的实验解答都一起放在下一节 06-ArchY86Lab 中
+
+关于体系结构的实验可能做的人不会很多, 指令集/处理器对于相当一部分人来说都是很陌生的, 直接上手 Y86 汇编应该是相当吃力的, 因此建议读者先阅读一下第四章处理器体系结构, 再结合实验所提供的文档继续完成实验
 
 笔者也对书中内容和文档资料做了一些总结
-
-## 前言
-
-在 `make` 构建的时候会出现一些问题 ,比如 flex bison 未找到 tcl 库没找到这种, `.usr/bin/ld: cannot find -lfl` 等,运行如下指令安装即可
-
-```bash
-sudo apt install tcl tcl-dev tk tk-dev
-sudo apt install flex bison
-```
-
-编译还可能会遇到其他问题, 比如 ld 的时候multi define, 这个主要是因为弱符号强符号的问题, gcc-10 之后的默认选项变成了 -fcommon 所以如果你是 gcc-10 及更高版本会报错, 参考[fail to compile the y86 simulatur csapp](https://stackoverflow.com/questions/63152352/fail-to-compile-the-y86-simulatur-csapp) 要么将所有 Makefile 里面的 CFLAGS LCFLAGS 加上 -fcommon
-
-不过我建议下一个低版本的 gcc-9 然后切为默认, 读者可参考[gcc版本切换](https://luzhixing12345.github.io/2023/03/14/环境配置/gcc版本切换/), 再编译就没问题了
 
 ## 处理器体系结构
 
@@ -38,6 +27,12 @@ sudo apt install flex bison
 - Y86 具有类似 x86-64 有 15 个程序寄存器(省略了 r15). 每一个寄存器存储一个 64 位的字. **除了寄存器 rsp 被入栈/出栈/调用/返回指令作为栈指针外, 寄存器没有固定的含义或固定值**
 - Y86 有 3 个一位的条件码 ZF SF OF , 他们保存着最近的算术或逻辑指令所造成影响的有关信息, 程序计数器 PC 存放当前正在执行指令的地址
 - 内存从概念上来说是一个很大的字节数组, 保存着程序和数据. 程序状态码 stat 表明程序执行的总体状态, 它会指示正常运行还是出现了某种异常.
+
+  stat 的状态在 Y86-64 架构中一共有4种, 如下所示
+
+  ![20230630091624](https://raw.githubusercontent.com/learner-lu/picbed/master/20230630091624.png)
+
+  > 对于 Y86-64 当遇到这些异常的时候简单的让处理器停止执行指令, 在更完整的设计当中处理器通常会调用一个异常处理程序
 
 ## Y86-64 指令集
 
@@ -92,3 +87,237 @@ Y86-64 指令集基本上是 x86-64 的一个子集, 如下所示. 其中**指�
 这个性质保证了处理器可以无二义性地执行目标代码程序。即使代码嵌入在程序的其他字节中，只要从序列的第一个字节开始处理，我们仍然可以很容易地确定指令序列。反过来说，如果不知道一段代码序列的起始位置，我们就不能准确地确定怎样将序列划分成单独的指令。对于试图直接从目标代码字节序列中抽取出机器级程序的反汇编程序和其他一些工具来说，这就带来了问题。
 
 同x86-64中的指令编码相比，Y86-64的编码简单得多，但是没那么紧凑。在所有的Y86-64指令中，寄存器字段的位置都是固定的，而在不同的x86-64指令中，它们的位置是不一样的。x86-64可以将常数值编码成 1、2、4或8个字节，**而Y86-64总是将常数值编码成8个字节**。
+
+> 另外关于 RISC CISC 指令集的讨论, 书中也给出了两段旁注, 非常值得一读. 
+> 
+> 20世纪80年代，计算机体系结构领域里关于RISC指令集和CISC 指令集优缺点的争论十分激烈。RISC的支持者声称在给定硬件数量的情况下，通过结合简约式指令集设计、高级编译器技术和流水线化的处理器实现，他们能够得到更强的计算能力。而CISC的拥趸反驳说要完成一个给定的任务只需要用较少的CISC指令，所以他们的机器能够获得更高的总体性能。
+>
+> 然而事实证明无论是单纯的RISC还是单纯的CISC都不如结合两者思想精华的设计。RISC机器发展进化的过程中，引入了更多的指令，而许多这样的指令都需要执行多个周期。今天的RISC机器的指令表中有几百条指令，几乎与“精简指令集机器”的名称不相符了。那种将实现细节暴露给机器级程序的思想已经被证明是目光短浅的。随着使用更加高级硬件结构的新处理器模型的开发，许多实现细节已经变得很落后了，但它们仍然是指令集的一部分。不过，作为RISC设计的核心的指令集仍然是非常适合在流水线化的机器上执行的。
+>
+> 比较新的CISC机器也利用了高性能流水线结构。它们读取CISC指令，并动态地翻译成比较简单的、像 RISC那样的操作的序列。例如，一条将寄存器和内存相加的指令被翻译成三个操作:一个是读原始的内存值，一个是执行加法运算，第三就是将和写回内存。由于动态翻译通常可以在实际指令执行前进行,处理器仍然可以保持很高的执行速率。
+
+## Y86-64 程序
+
+书中给出了一个比较基础的汇编程序示例, 对照左侧 x86-64 指令集, 右侧也都是前文介绍过的汇编指令. y86-64 采用了和x86-64相同的参数传递和寄存器保存方法
+
+![20230630095503](https://raw.githubusercontent.com/learner-lu/picbed/master/20230630095503.png)
+
+观察上面的程序, 可以注意到一些不同之处
+
+- Y86-64 需要先将常数加载到寄存器, 因为在算数指令不能使用立即数
+- 从内存中读取一个数值并于一个寄存器值相加(sum+=*start)在 Y86-64 中需要两条指令(8,9), 而 x86-64 只需要一条 addq(5)
+- Y86-64 中11行使用了 subq 实现 -1 之外还设置了条件码, 可以直接进行后续的 jne 判断而不需要像 x86 一样通过 testq 判断
+
+下面是一段比较简单但是完整的 y86-64 汇编代码, 你可以在 [y86-code/asum.ys](https://github.com/luzhixing12345/csapplab/blob/main/05_arch_lab/archlab-handout/sim/y86-code/asum.ys) 中找到这段代码. 这段代码就是利用上面的 sum 函数, 对于 array 数组中的元素求和
+
+```y86asm
+# Execution begins at address 0 
+	.pos 0
+	irmovq stack, %rsp  	# Set up stack pointer
+	call main		# Execute main program
+	halt			# Terminate program 
+
+# Array of 4 elements
+	.align 8
+array:	
+    .quad 0x000d000d000d
+	.quad 0x00c000c000c0
+	.quad 0x0b000b000b00
+	.quad 0xa000a000a000
+
+main:	
+    irmovq array,%rdi
+	irmovq $4,%rsi
+	call sum		# sum(array, 4)
+	ret
+
+# long sum(long *start, long count)
+# start in %rdi, count in %rsi
+sum:
+    irmovq $8,%r8        # Constant 8
+	irmovq $1,%r9	     # Constant 1
+	xorq %rax,%rax	     # sum = 0
+	andq %rsi,%rsi	     # Set CC
+	jmp     test         # Goto test
+loop:
+    mrmovq (%rdi),%r10   # Get *start
+	addq %r10,%rax       # Add to sum
+	addq %r8,%rdi        # start++
+	subq %r9,%rsi        # count--.  Set CC
+test:
+    jne    loop          # Stop when 0
+	ret                  # Return
+
+# Stack starts here and grows to lower addresses
+	.pos 0x200
+stack:
+```
+
+除了我们熟悉的y86-64指令集, 汇编中还出现了#开头的注释, `.` 开头的汇编伪指令以及段的声明, 这部分与 x86 汇编类似, 简单解释一下.
+
+- `.pos` 指的是从当前地址开始生成代码, 比如开头的 .pos 0 和结尾的 .pos 0x200
+- `.align` 用于对齐
+- `.quad` 用于定义一个四字（8字节）
+- 声明不分前后, 比如 main stack 等段名都定义在后文, 最后生成机器码时会做一个名称到地址的翻译
+
+可以利用 yas 汇编器先将 y86-64 的汇编代码转换为对应的机器码
+
+```bash
+# in directory y86-code
+$ ../misc/yas asum.ys
+```
+
+得到 [asum.yo](https://github.com/luzhixing12345/csapplab/blob/main/05_arch_lab/archlab-handout/sim/y86-code/asum.yo) 文件内容如下, 可以看到对应的汇编指令按照前文提到的指令编码方式被整齐的转换为机器码
+
+```y86asm
+                            | # Execution begins at address 0 
+0x000:                      | 	.pos 0
+0x000: 30f40002000000000000 | 	irmovq stack, %rsp  	# Set up stack pointer
+0x00a: 803800000000000000   | 	call main		# Execute main program
+0x013: 00                   | 	halt			# Terminate program 
+                            | 
+                            | # Array of 4 elements
+0x018:                      | 	.align 8
+0x018: 0d000d000d000000     | array:	.quad 0x000d000d000d
+0x020: c000c000c0000000     | 	.quad 0x00c000c000c0
+0x028: 000b000b000b0000     | 	.quad 0x0b000b000b00
+0x030: 00a000a000a00000     | 	.quad 0xa000a000a000
+                            | 
+0x038: 30f71800000000000000 | main:	irmovq array,%rdi
+0x042: 30f60400000000000000 | 	irmovq $4,%rsi
+0x04c: 805600000000000000   | 	call sum		# sum(array, 4)
+0x055: 90                   | 	ret
+                            | 
+                            | # long sum(long *start, long count)
+                            | # start in %rdi, count in %rsi
+0x056: 30f80800000000000000 | sum:	irmovq $8,%r8        # Constant 8
+0x060: 30f90100000000000000 | 	irmovq $1,%r9	     # Constant 1
+0x06a: 6300                 | 	xorq %rax,%rax	     # sum = 0
+0x06c: 6266                 | 	andq %rsi,%rsi	     # Set CC
+0x06e: 708700000000000000   | 	jmp     test         # Goto test
+0x077: 50a70000000000000000 | loop:	mrmovq (%rdi),%r10   # Get *start
+0x081: 60a0                 | 	addq %r10,%rax       # Add to sum
+0x083: 6087                 | 	addq %r8,%rdi        # start++
+0x085: 6196                 | 	subq %r9,%rsi        # count--.  Set CC
+0x087: 747700000000000000   | test:	jne    loop          # Stop when 0
+0x090: 90                   | 	ret                  # Return
+                            | 
+                            | # Stack starts here and grows to lower addresses
+0x200:                      | 	.pos 0x200
+0x200:                      | stack:
+```
+
+最后使用 yis 执行结果如下, 可以观察到 rax 寄存器的值变为定义的四个数组元素的和 `0xabcdabcdabcd`. 同时由于在汇编中使用了两次call(call main, call sum), 栈rsp指针为 0x200, 所以下面的两个内存地址(0x01f0, 0x01f8) 的值也被修改了, 不过好在 asum.yo 中代码段可以看到最后的位置是 `0x090: 90`, 所以数值的入栈和出栈没有影响到代码段
+
+```bash
+$ ../misc/yis  asum.yo
+Stopped in 34 steps at PC = 0x13.  Status 'HLT', CC Z=1 S=0 O=0
+Changes to registers:
+%rax:   0x0000000000000000      0x0000abcdabcdabcd
+%rsp:   0x0000000000000000      0x0000000000000200
+%rdi:   0x0000000000000000      0x0000000000000038
+%r8:    0x0000000000000000      0x0000000000000008
+%r9:    0x0000000000000000      0x0000000000000001
+%r10:   0x0000000000000000      0x0000a000a000a000
+
+Changes to memory:
+0x01f0: 0x0000000000000000      0x0000000000000055
+0x01f8: 0x0000000000000000      0x0000000000000013
+```
+
+## 数字电路和逻辑门
+
+接下来书中又介绍了关于数字逻辑电路的相关知识, 首先是最基础的三个布尔函数 AND OR NOT, 对应的表示HCL符号为 && || !
+
+![20230630222854](https://raw.githubusercontent.com/learner-lu/picbed/master/20230630222854.png)
+
+利用这三个基本的逻辑门就可以构建很多复杂的组合电路, 这些电路的网络有一些限制
+
+1. 每个逻辑门的输入必须连接到 [一个系统输入] | [某个存储器单元的输出] | [某个逻辑门的输出]
+2. 两个或多个逻辑门的输出不能连在一起(会导致信号矛盾, 不合法的电压/电路故障)
+3. 无环(会导致计算歧义)
+
+下面来看一个简单的例子, 下图的组合电路的效果是只有a,b同为1/0的时候结果才为1, 想要写出它的HCL语言可以从右向左看, 首先是一个OR, 所以是 `bool x = ? || ?`, 上下再分别观察拆分为 `bool x = (a&&b) || (!a && !b)`
+
+![20230630222609](https://raw.githubusercontent.com/learner-lu/picbed/master/20230630222609.png)
+
+再看一个小例子, 下图是一个很经典的组合电路, 也被称为多路复用器(MUX), 其特点为当 s=1 时结果为 a 的值, 当 s=0 时结果为 b 的值, 其 HCL 表示为 `bool x = (s&&a) || (!s&&b)`
+
+![20230630222631](https://raw.githubusercontent.com/learner-lu/picbed/master/20230630222631.png)
+
+同时需要注意的是 HCL 表达式和 C 表达式也有一些区别
+
+1. 因为组合电路是由一系列的逻辑门组成，它的属性是输出会持续地响应输入的变化。如果电路的输人变化了，在一定的延迟之后，输出也会相应地变化。相比之下，C表达式只会在程序执行过程中被遇到时才进行求值。
+2. C的逻辑表达式允许参数是任意整数，0表示FALSE，其他任何值都表示TRUE。而逻辑门只对位值0和1进行操作。
+3. C的逻辑表达式有个属性就是它们可能只被部分求值。如果一个AND或OR操作的结果只用对第一个参数求值就能确定，那么就不会对第二个参数求值了。而组合逻辑没有部分求值这条规则，逻辑门只是简单地响应输入的变化。
+
+通过将位级电路进行组合可以得到更大的网, 处理器设计经常会包含很多字, 我们可以做一个字级别的抽象, 如下图所示, 只要AB的每一位都相同我们就可以说 A == B. 这里的字级抽象即将线所代表的意义从比特上升为了(8*)含义上的字
+
+![20230630231628](https://raw.githubusercontent.com/learner-lu/picbed/master/20230630231628.png)
+
+于此同时处理器中也会经常使用多路复用器, 下图是前文提到过的MUX, 其效果是当 s=1 时输出A, 否则输出B. 对应的字级抽象如右侧所示.
+
+![20230630232435](https://raw.githubusercontent.com/learner-lu/picbed/master/20230630232435.png)
+
+但是这里的 HCL 表达式会有一点点奇怪, 这里简单解释一下. 多路复用函数采用情况表达式来描述, 表达式的通用格式就是 `[select: expr; ...]`. **这里不要求每一个表达式都互斥, 且表达式的选择是顺序求值的, 第一个求值为1 的情况会被选中**, 有点类似 `if elif elif ... else`
+
+```HCL
+word Out = [
+    s: A;
+    1: B;
+]
+```
+
+所以分析一下上面的HCL表达式, 当 s=0 的时候第一项没有匹配到, 所以选择了第二项B. 当s=1的时候匹配到了所以选择A, 和预期相同.
+
+需要注意的是表达式的选择是顺序求值的, 所以通常最后一个标记为1, 相当于最后一个 else
+
+我们再看一个简单的四路复用器, 其中 s0 s1 一起控制了输出结果
+
+![20230630233233](https://raw.githubusercontent.com/learner-lu/picbed/master/20230630233233.png)
+
+一般来说可能会写出如下的 HCL
+
+```HCL
+word Out4 = [
+    !s1 && !s0 : A; # 00
+    !s1 &&  s0 : B; # 01
+     s1 && !s0 : C; # 10
+     s1 &&  s0 : D; # 11
+]
+```
+
+但考虑到顺序判断的行为, 也可以写作如下的方式. 当然从阅读的角度来说笔者更倾向于前者
+
+```HCL
+word Out4 = [
+    !s1 && !s0 : A; # 00
+    !s1        : B; # 01
+    !s0        : C; # 10
+    1          : D; # 11
+]
+```
+
+ALU(算数逻辑单元)是一种重要的组合电路, 具体的实现比较复杂, 其大致功能效果如下所示, 即对于不同的输入 s ALU 可以执行不同的运算
+
+![20230701121823](https://raw.githubusercontent.com/learner-lu/picbed/master/20230701121823.png)
+
+> 这里的是 X-Y 对应 Y86-64 中 subq 的顺序
+
+在处理器设计中，很多时候都需要将一个信号与许多可能匹配的信号做比较，以此来检测正在处理的某个指令代码是否属于某一类指令代码。比如下面这个例子中 **code 是一个 2-bits 的信号**, 为了使用MUX控制ABCD的选择需要将其拆分为 s0, s1 两个信号
+
+![20230701122836](https://raw.githubusercontent.com/learner-lu/picbed/master/20230701122836.png)
+
+因此可以分别判断 `s1s0` 两位的值, 即2和3的高位为1, 1和3低位为1, 可以写作如下的方式
+
+```
+bool s1 = code == 2 || code == 3;
+bool s0 = code == 1 || code == 3;
+```
+
+当然可以更简化一些写成集合的形式, 这两种方式也是等价的
+
+```
+bool s1 = code in {2,3};
+bool s2 = code in {1,3};
+```
