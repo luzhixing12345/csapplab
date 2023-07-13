@@ -286,13 +286,13 @@ void eval(char *cmdline) {
       }
     }
     if (!bg) {
-      // 对于前台进程，添加job后解除阻塞，并通过waitfg等待子进程结束后回收
+      // 对于前台进程,添加job后解除阻塞,并通过waitfg等待子进程结束后回收
       sigprocmask(SIG_BLOCK, &mask_all, NULL);
       addjob(jobs, pid, FG, cmdline);
       sigprocmask(SIG_SETMASK, &prev, NULL);
       waitfg(pid);
     } else {
-      // 后台进程不需要等待子进程，进程结束之后收到SIGCHLD信号回收即可
+      // 后台进程不需要等待子进程,进程结束之后收到SIGCHLD信号回收即可
       sigprocmask(SIG_BLOCK, &mask_all, NULL);
       addjob(jobs, pid, BG, cmdline);
       sigprocmask(SIG_SETMASK, &prev, NULL);
@@ -473,7 +473,7 @@ TSTP
 jobs
 ```
 
-第八关加入了TSTP(CTRL_Z),当接收到了TSTP中断信号（即CTRL_Z),将前台进程挂起,然后输出被挂起的任务,和INT类似,完成两个函数
+第八关加入了TSTP(CTRL_Z),当接收到了TSTP中断信号(即CTRL_Z),将前台进程挂起,然后输出被挂起的任务,和INT类似,完成两个函数
 
 ```c
 void sigchld_handler(int sig) {
@@ -642,7 +642,7 @@ void do_bgfg(char **argv) {
 		jid=atoi(&argv[1][1]);
         job=getjobjid(jobs,jid);
 		if (job->state == ST) {
-			//如果是挂起程序就重启并且转到前台，等待结束
+			//如果是挂起程序就重启并且转到前台,等待结束
 			job->state=FG;
             kill(-(job->pid),SIGCONT);
             waitfg(job->pid);
@@ -673,9 +673,9 @@ void do_bgfg(char **argv) {
 
 ### trace14
 
-本关主要是测试所有的命令，判断是否正确。这一关没有技术难关，主要就是对照输出结果完善你的shell对于错误的处理
+本关主要是测试所有的命令,判断是否正确.这一关没有技术难关,主要就是对照输出结果完善你的shell对于错误的处理
 
-注意大小写！ 注意标点！ 注意空格！
+注意大小写! 注意标点! 注意空格!
 
 ```c
 void eval(char **cmdline) {
@@ -719,7 +719,7 @@ void do_bgfg(char **argv) {
 		printf("[%d] (%d) %s", jid, job->pid, job->cmdline);
 	} else if (!strcmp(argv[0], "fg")) {
 		if (job->state == ST) {
-			//如果是挂起程序就重启并且转到前台，等待结束
+			//如果是挂起程序就重启并且转到前台,等待结束
 			job->state=FG;
             kill(-(job->pid),SIGCONT);
             waitfg(job->pid);
@@ -932,13 +932,13 @@ void eval(char *cmdline) {
       }
     }
     if (!bg) {
-      // 对于前台进程，添加job后解除阻塞，并通过waitfg等待子进程结束后回收
+      // 对于前台进程,添加job后解除阻塞,并通过waitfg等待子进程结束后回收
       sigprocmask(SIG_BLOCK, &mask_all, NULL);
       addjob(jobs, pid, FG, cmdline);
       sigprocmask(SIG_SETMASK, &prev, NULL);
       waitfg(pid);
     } else {
-      // 后台进程不需要等待子进程，进程结束之后收到SIGCHLD信号回收即可
+      // 后台进程不需要等待子进程,进程结束之后收到SIGCHLD信号回收即可
       sigprocmask(SIG_BLOCK, &mask_all, NULL);
       addjob(jobs, pid, BG, cmdline);
       sigprocmask(SIG_SETMASK, &prev, NULL);
@@ -1058,7 +1058,7 @@ void do_bgfg(char **argv) {
 		printf("[%d] (%d) %s", jid, job->pid, job->cmdline);
 	} else if (!strcmp(argv[0], "fg")) {
 		if (job->state == ST) {
-			//如果是挂起程序就重启并且转到前台，等待结束
+			//如果是挂起程序就重启并且转到前台,等待结束
 			job->state=FG;
             kill(-(job->pid),SIGCONT);
             waitfg(job->pid);
