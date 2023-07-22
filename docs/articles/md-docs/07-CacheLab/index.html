@@ -14,7 +14,7 @@
 
 <body class="light">
     <a href="https://github.com/luzhixing12345/csapplab.git" target="_blank" class="github-corner" aria-label="View source on GitHub"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#151513; color:#fff; position: absolute; top: 0; border: 0; right: 0;" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a><style>.github-corner:hover .octo-arm{animation:octocat-wave 560ms ease-in-out}@keyframes octocat-wave{0%,100%{transform:rotate(0)}20%,60%{transform:rotate(-25deg)}40%,80%{transform:rotate(10deg)}}@media (max-width:500px){.github-corner:hover .octo-arm{animation:none}.github-corner .octo-arm{animation:octocat-wave 560ms ease-in-out}}</style>
-    <div class="header-navigator"><ul><li><a href="#h1-0">CacheLab</a><ul><li><a href="#h2-1">前言</a></li></ul><ul><li><a href="#h2-2">实验报告</a><ul><li><a href="#h3-3">Part A: Writing a Cache Simulator</a></li></ul><ul><li><a href="#h3-4">Part B: Optimizing Matrix Transpose</a><ul><li><a href="#h4-5">分块技术</a></li></ul><ul><li><a href="#h4-6">32x32</a></li></ul><ul><li><a href="#h4-7">64x64</a></li></ul><ul><li><a href="#h4-8">61x67</a></li></ul></li></ul></li></ul><ul><li><a href="#h2-9">参考</a></li></ul></li></ul></div><div class='markdown-body'><h1 id="h1-0">CacheLab</h1><h2 id="h2-1">前言</h2><p>本次实验是针对第六章Cache的内容,涉及到对于缓存替换策略的理解和具体代码的编写.</p><p>本次实验分为两个部分,Part A是编写一个缓存模拟器,Part B是优化矩阵变换</p><h2 id="h2-2">实验报告</h2><p>下载valgrind</p><pre><code class="language-bash">sudo apt install valgrind</code></pre><p>下面这条指令会执行<code>ls -l</code>指令并且记录相应的内存访存时的信息</p><pre><code class="language-bash">valgrind --log-fd=1 --tool=lackey -v --trace-mem=yes ls -l</code></pre><blockquote><p>注:这条指令会执行一小段时间,并且输出很多信息</p></blockquote><p>在输出的信息之中,I表示 instruction load, L表示 data load, S 表示data store, M表示data modify,接着是一个64位地址和操作的字节数</p><h3 id="h3-3">Part A: Writing a Cache Simulator</h3><p>Part A是实现一个简单的cache,模拟<code>csim-ref</code>的输入和输出格式,参数sEb也都是书中介绍过的</p><blockquote><p><a href="https://blog.csdn.net/Mculover666/article/details/106646339" target="_blank">getopt使用方法</a></p><p><a href="https://blog.csdn.net/afei__/article/details/81261879" target="_blank">getopt方法解析</a></p></blockquote><p>这里的代码实现思路参考<a href="https://zhuanlan.zhihu.com/p/142942823" target="_blank">CSAPP:Lab4-Cache Lab</a></p><p>由于只是模拟计算cache的miss hit eviction,并不需要真的保存数据,trace文件中也没有数据用于缓存,所以CacheLine没有定义缓存块B</p><p>CacheLine的标记位tag正常来说是可以通过64-b-s来计算的,但由于是变长用char*处理起来有些麻烦所以使用了unsigned long 一个64位无符号整数来简化处理</p><p>整个程序的执行过程大致思路是,首先通过argparser解析命令行参数,initCache根据s,E初始化一个Cache对象.simulate中visitCache函数是关键,根据s,b划分标记位,索引位,并且通过索引位(set_index)找到cache中的索引块</p><p>判断有效位,如果为1继续判断标记位.如果为0则认为是一个空块.这里的LRU算法的实现很精巧,最近被访问的lru设为1,在遍历的过程中每个块的lru++,evict块标记为所有块中lru值最大的,这样如果没有空块可以直接找到evict块进行一个lru替换</p><pre><code class="language-c">#include "cachelab.h"
+    <div class="header-navigator"><ul><li><a href="#h1-0">CacheLab</a><ul><li><a href="#h2-1">前言</a></li></ul><ul><li><a href="#h2-2">实验报告</a><ul><li><a href="#h3-3">Part A: Writing a Cache Simulator</a></li></ul><ul><li><a href="#h3-4">Part B: Optimizing Matrix Transpose</a><ul><li><a href="#h4-5">分块技术</a></li></ul><ul><li><a href="#h4-6">32x32</a></li></ul><ul><li><a href="#h4-7">64x64</a></li></ul><ul><li><a href="#h4-8">61x67</a></li></ul></li></ul></li></ul><ul><li><a href="#h2-9">参考</a></li></ul></li></ul></div><div class='markdown-body'><h1 id="h1-0">CacheLab</h1><h2 id="h2-1">前言</h2><p>本次实验是针对第六章Cache的内容,涉及到对于缓存替换策略的理解和具体代码的编写.</p><p>本次实验分为两个部分,Part A是编写一个缓存模拟器,Part B是优化矩阵变换</p><h2 id="h2-2">实验报告</h2><p>下载valgrind</p><pre><code class="language-bash">sudo apt install valgrind</code></pre><p>下面这条指令会执行<code>ls -l</code>指令并且记录相应的内存访存时的信息</p><pre><code class="language-bash">valgrind --log-fd=1 --tool=lackey -v --trace-mem=yes ls -l</code></pre><blockquote><p>注:这条指令会执行一小段时间,并且输出很多信息</p></blockquote><p>在输出的信息之中,I表示 instruction load, L表示 data load, S 表示data store, M表示data modify,接着是一个64位地址和操作的字节数</p><h3 id="h3-3">Part A: Writing a Cache Simulator</h3><p>Part A是实现一个简单的cache,模拟<code>csim-ref</code>的输入和输出格式,参数sEb也都是书中介绍过的</p><blockquote><p><a href="https://blog.csdn.net/Mculover666/article/details/106646339" target="_blank">getopt使用方法</a></p><p><a href="https://blog.csdn.net/afei__/article/details/81261879" target="_blank">getopt方法解析</a></p></blockquote><p>这里的代码实现思路参考<a href="https://zhuanlan.zhihu.com/p/142942823" target="_blank">CSAPP:Lab4-Cache Lab</a></p><p>由于只是模拟计算cache的miss hit eviction,并不需要真的保存数据,trace文件中也没有数据用于缓存,所以CacheLine没有定义缓存块B</p><p>CacheLine的标记位tag正常来说是可以通过64-b-s来计算的,但由于是变长用char*处理起来有些麻烦所以使用了unsigned long 一个64位无符号整数来简化处理</p><p>整个程序的执行过程大致思路是,首先通过argparser解析命令行参数,initCache根据s,E初始化一个Cache对象.simulate中visitCache函数是关键,根据s,b划分标记位,索引位,并且通过索引位(set_index)找到cache中的索引块</p><p>判断有效位,如果为1继续判断标记位.如果为0则认为是一个空块.这里的LRU算法的实现很精巧,最近被访问的lru设为1,在遍历的过程中每个块的lru++,evict块标记为所有块中lru值最大的,这样如果没有空块可以直接找到evict块进行一个lru替换</p><pre><code class="language-c">#include &quot;cachelab.h&quot;
 
 #include &lt;getopt.h&gt;
 #include &lt;stdlib.h&gt;
@@ -22,7 +22,7 @@
 #include &lt;stdio.h&gt;
 #include &lt;math.h&gt;
 
-const char* usage = "Usage: %s [-hv] -s &lt;s&gt; -E &lt;E&gt; -b &lt;b&gt; -t &lt;tracefile&gt;\n";
+const char* usage = &quot;Usage: %s [-hv] -s &lt;s&gt; -E &lt;E&gt; -b &lt;b&gt; -t &lt;tracefile&gt;\n&quot;;
 
 int verbose = 0; //verbose flag
 int s=-1;  //number of set index bits
@@ -58,27 +58,27 @@ typedef struct {
 
 void argparser(int argc, char* argv[]) {
     int opt;
-    while ((opt = getopt(argc, argv, "hvs:E:b:t:")) != -1)
+    while ((opt = getopt(argc, argv, &quot;hvs:E:b:t:&quot;)) != -1)
     {
         switch(opt)
         {
-            case 'h':
+            case &#x27;h&#x27;:
                 fprintf(stdout, usage, argv[0]);
                 exit(1);
-            case 'v':
+            case &#x27;v&#x27;:
                 verbose = 1;
                 break;
-            case 's':
+            case &#x27;s&#x27;:
                 s = atoi(optarg);
                 break;
-            case 'E':
+            case &#x27;E&#x27;:
                 E = atoi(optarg);
                 break;
-            case 'b':
+            case &#x27;b&#x27;:
                 b = atoi(optarg);
                 break;
-            case 't':
-                fp = fopen(optarg, "r");
+            case &#x27;t&#x27;:
+                fp = fopen(optarg, &quot;r&quot;);
                 break;
             default:
                 fprintf(stdout, usage, argv[0]);
@@ -86,7 +86,7 @@ void argparser(int argc, char* argv[]) {
         }
     }
     if (s == -1 || E == -1 || b == -1) {
-        printf("s E b are required\n");
+        printf(&quot;s E b are required\n&quot;);
         exit(1);
     }
 }
@@ -104,9 +104,9 @@ Cache* initCache() {
 
 int visitCache(Cache *cache, uint64_t address) {
 
-    uint64_t set_index = address &gt;&gt; b & ((1 &lt;&lt; s) - 1);
+    uint64_t set_index = address &gt;&gt; b &amp; ((1 &lt;&lt; s) - 1);
     uint64_t tag = address &gt;&gt; (b+s);
-    // printf("address = %lx, set_index = %lx, tag = %lx\n",address,set_index,tag);
+    // printf(&quot;address = %lx, set_index = %lx, tag = %lx\n&quot;,address,set_index,tag);
     CacheGroup cache_group = cache-&gt;cache_groups[set_index];
     int evict = 0;
     int empty = -1;
@@ -147,23 +147,23 @@ void simulate(Cache *cache) {
     int size;
     int result;
     while (fgets(buf, sizeof(buf), fp) != NULL) {
-        if (buf[0] == 'I') continue;
-        sscanf(buf, " %c %lx,%d", &operation, &address, &size);
+        if (buf[0] == &#x27;I&#x27;) continue;
+        sscanf(buf, &quot; %c %lx,%d&quot;, &amp;operation, &amp;address, &amp;size);
         result = visitCache(cache, address);
-        if (operation == 'M') hits++;
+        if (operation == &#x27;M&#x27;) hits++;
         if (verbose) {
             switch (result) {
                 case HIT:
-                    printf("%c %lx,%d hit\n", operation, address, size);
+                    printf(&quot;%c %lx,%d hit\n&quot;, operation, address, size);
                     break;
                 case MISS:
-                    printf("%c %lx,%d miss\n", operation, address, size);
+                    printf(&quot;%c %lx,%d miss\n&quot;, operation, address, size);
                     break;
                 case EVICTION:
-                    printf("%c %lx,%d miss eviction\n", operation, address, size);
+                    printf(&quot;%c %lx,%d miss eviction\n&quot;, operation, address, size);
                     break;
                 default:
-                    fprintf(stdout, "unknown cache behave");
+                    fprintf(stdout, &quot;unknown cache behave&quot;);
                     exit(1);
             }
         }
@@ -202,7 +202,7 @@ Points (s,E,b)    Hits  Misses  Evicts    Hits  Misses  Evicts
      3 (5,1,5)     231       7       0     231       7       0  traces/trans.trace
      6 (5,1,5)  265189   21775   21743  265189   21775   21743  traces/long.trace
     27
-TEST_CSIM_RESULTS=27</code></pre><p>这里要补充一点的是,所有测试用例中的缓存块大小B都大于等于trace中的B,所以不存在访问一个连续单元的长度大于一个缓存块导致需要连续访存的情况.这种情况要复杂一些,可能还需要判断B大小划分成几块来计算.</p><h3 id="h3-4">Part B: Optimizing Matrix Transpose</h3><p><img src="https://raw.githubusercontent.com/learner-lu/picbed/master/20221230111233.png" alt="20221230111233"></p><p>PartB 的任务是利用缓存实现对矩阵转置的优化,缓存的规格是s=5,E=1,b=5,也就是32组每组一行保存32B数据.由于矩阵的数据类型是int(4字节),所以缓存每行可以保存8个int矩阵单元</p><p>需要转置的矩阵的大小有三组,分别是32x32, 64x64, 61x67, 我们需要完成的函数是tran.s中的transpose_submit</p><p>除此之外文档中还有其他的要求</p><ul><li>一共只准使用不超过 12 个 int 类型局部变量</li></ul><ul><li>不能用递归</li></ul><ul><li>不能改变A数组中的值</li></ul><ul><li>不能定义新的数组也不能用 malloc 函数开辟空间</li></ul><ul><li>cache miss 的次数尽可能少</li></ul><p>trans.c中使用<code>registerTransFunction</code>将转置函数注册进去,我们可以直接在transpose_submit中编写代码,根据M的不同输入值判断</p><pre><code class="language-c">char transpose_submit_desc[] = "Transpose submission";
+TEST_CSIM_RESULTS=27</code></pre><p>这里要补充一点的是,所有测试用例中的缓存块大小B都大于等于trace中的B,所以不存在访问一个连续单元的长度大于一个缓存块导致需要连续访存的情况.这种情况要复杂一些,可能还需要判断B大小划分成几块来计算.</p><h3 id="h3-4">Part B: Optimizing Matrix Transpose</h3><p><img src="https://raw.githubusercontent.com/learner-lu/picbed/master/20221230111233.png" alt="20221230111233"></p><p>PartB 的任务是利用缓存实现对矩阵转置的优化,缓存的规格是s=5,E=1,b=5,也就是32组每组一行保存32B数据.由于矩阵的数据类型是int(4字节),所以缓存每行可以保存8个int矩阵单元</p><p>需要转置的矩阵的大小有三组,分别是32x32, 64x64, 61x67, 我们需要完成的函数是tran.s中的transpose_submit</p><p>除此之外文档中还有其他的要求</p><ul><li>一共只准使用不超过 12 个 int 类型局部变量</li></ul><ul><li>不能用递归</li></ul><ul><li>不能改变A数组中的值</li></ul><ul><li>不能定义新的数组也不能用 malloc 函数开辟空间</li></ul><ul><li>cache miss 的次数尽可能少</li></ul><p>trans.c中使用<code>registerTransFunction</code>将转置函数注册进去,我们可以直接在transpose_submit中编写代码,根据M的不同输入值判断</p><pre><code class="language-c">char transpose_submit_desc[] = &quot;Transpose submission&quot;;
 void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 {
     if (M == 32) {
@@ -212,7 +212,7 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
     } else {
         //
     }
-}</code></pre><p>也可以新建函数,然后手动将其注册进去</p><pre><code class="language-c">char transpose_32x32[] = "Transpose 32x32";
+}</code></pre><p>也可以新建函数,然后手动将其注册进去</p><pre><code class="language-c">char transpose_32x32[] = &quot;Transpose 32x32&quot;;
 void transpose_submit_32x32(int M, int N, int A[N][M], int B[M][N]) {
     //
 }
@@ -284,7 +284,7 @@ func 0 (Transpose submission): hits:1766, misses:287, evictions:255
 
 Summary for official submission (func 0): correctness=1 misses=287
 
-TEST_TRANS_RESULTS=1:287</code></pre><p>此时我们发现次数变为了287次,已经得到第一题的满分了. 那么本题最优次数应该是多少呢?</p><p>对于8x8的分块来说,一共16个小矩阵,AB在cache中各自至少有8次miss,所以理论上最佳miss次数为(8+8)x16=256</p><p>如果不是8x8的分组,4x4的话miss次数为(4+4)x(8x8),16x16的话每个块内由于cache行只能保存8个int,所以每个数组会出现32次miss,总miss为(32+32)x4,,但是由于cache只有32组,不可能同时保存AB两个矩阵的行(32+32&gt32),所以必定出现cache冲突的替换,反而增大miss</p><p>那么多出来的这些miss是为什么呢? 实际上即使我们使用临时变量保存仍然会出现替换造成的miss. B在第一列的时候将所有的数组元素都加载到cache[4x]中了,其后A每下移一行,在对角线处都会替换一次cache[4x]的位置,如果能把 B 中的对角线元素命中的话,就可以达到理论上的 256 次 miss</p><p>处理冲突不命中,就是要处理重复的加载. 对于AB重复访问的情况</p><ul><li>在 A 访问第二行之前不让 B 访问第二行</li></ul><ul><li>在 A 访问第二行之后不让 B 访问第二行</li></ul><p>后者不可能做到因为B一定是要写入的,所以我们考虑延迟B访问第二行的时间,也就是处理第一列的时候. 所以我们换一个思路，<b>能否等 A 的下一行的元素访问完了再转置？</b></p><p>因为自由变量是有限的(不然直接256个变量上去了),所以我们可以将 A 的元素暂存在 B 的第一行，等到下一行读到变量里再访问 B 的下一行. 当i==j的时候手动交换8x8区域内的元素,利用八个变量交替读取A的每一行,并保存到B的行中,然后在每一列中做对应的转置处理</p><pre><code class="language-c">void transpose_submit(int M, int N, int A[N][M], int B[M][N])
+TEST_TRANS_RESULTS=1:287</code></pre><p>此时我们发现次数变为了287次,已经得到第一题的满分了. 那么本题最优次数应该是多少呢?</p><p>对于8x8的分块来说,一共16个小矩阵,AB在cache中各自至少有8次miss,所以理论上最佳miss次数为(8+8)x16=256</p><p>如果不是8x8的分组,4x4的话miss次数为(4+4)x(8x8),16x16的话每个块内由于cache行只能保存8个int,所以每个数组会出现32次miss,总miss为(32+32)x4,,但是由于cache只有32组,不可能同时保存AB两个矩阵的行(32+32&gt;32),所以必定出现cache冲突的替换,反而增大miss</p><p>那么多出来的这些miss是为什么呢? 实际上即使我们使用临时变量保存仍然会出现替换造成的miss. B在第一列的时候将所有的数组元素都加载到cache[4x]中了,其后A每下移一行,在对角线处都会替换一次cache[4x]的位置,如果能把 B 中的对角线元素命中的话,就可以达到理论上的 256 次 miss</p><p>处理冲突不命中,就是要处理重复的加载. 对于AB重复访问的情况</p><ul><li>在 A 访问第二行之前不让 B 访问第二行</li></ul><ul><li>在 A 访问第二行之后不让 B 访问第二行</li></ul><p>后者不可能做到因为B一定是要写入的,所以我们考虑延迟B访问第二行的时间,也就是处理第一列的时候. 所以我们换一个思路，<b>能否等 A 的下一行的元素访问完了再转置？</b></p><p>因为自由变量是有限的(不然直接256个变量上去了),所以我们可以将 A 的元素暂存在 B 的第一行，等到下一行读到变量里再访问 B 的下一行. 当i==j的时候手动交换8x8区域内的元素,利用八个变量交替读取A的每一行,并保存到B的行中,然后在每一列中做对应的转置处理</p><pre><code class="language-c">void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 {
     if (M == 32) {
         int i, j, k, l;

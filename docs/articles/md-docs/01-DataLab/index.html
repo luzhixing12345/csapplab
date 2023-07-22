@@ -14,12 +14,12 @@
 
 <body class="light">
     <a href="https://github.com/luzhixing12345/csapplab.git" target="_blank" class="github-corner" aria-label="View source on GitHub"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#151513; color:#fff; position: absolute; top: 0; border: 0; right: 0;" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a><style>.github-corner:hover .octo-arm{animation:octocat-wave 560ms ease-in-out}@keyframes octocat-wave{0%,100%{transform:rotate(0)}20%,60%{transform:rotate(-25deg)}40%,80%{transform:rotate(10deg)}}@media (max-width:500px){.github-corner:hover .octo-arm{animation:none}.github-corner .octo-arm{animation:octocat-wave 560ms ease-in-out}}</style>
-    <div class="header-navigator"><ul><li><a href="#h1-0">datalab</a><ul><li><a href="#h2-1">前言</a></li></ul><ul><li><a href="#h2-2">实验解答</a></li></ul><ul><li><a href="#h2-3">编译运行</a></li></ul></li></ul></div><div class='markdown-body'><h1 id="h1-0">datalab</h1><h2 id="h2-1">前言</h2><pre><code class="language-bash">tar xvf datalab-handout.tar</code></pre><p>解压缩之后可以看到本次实验使用的是gcc工具,打开Makefile文件可以看到使用了-m32进行了编译</p><p>所以如果在编译的时候报错了还需要安装32位的gcc编译器</p><pre><code class="language-bash">sudo apt-get install gcc-multilib</code></pre><p>位运算运算符优先级</p><table><tr><th>运算符</th><th>优先级</th></tr><tr><td style="text-align:center">                ()</td><td style="text-align:center">                1</td></tr><tr><td style="text-align:center">                -(单目) ! ~</td><td style="text-align:center">                2</td></tr><tr><td style="text-align:center">                * / %</td><td style="text-align:center">                3</td></tr><tr><td style="text-align:center">                + -</td><td style="text-align:center">                4</td></tr><tr><td style="text-align:center">                &lt&lt &gt&gt</td><td style="text-align:center">                5</td></tr><tr><td style="text-align:center">                &gt &gt= &lt &lt=</td><td style="text-align:center">                6</td></tr><tr><td style="text-align:center">                == !=</td><td style="text-align:center">                7</td></tr><tr><td style="text-align:center">                &</td><td style="text-align:center">                8</td></tr><tr><td style="text-align:center">                ^</td><td style="text-align:center">                9</td></tr><tr><td style="text-align:center">                |</td><td style="text-align:center">                10</td></tr></table><blockquote><p><a href="https://baike.baidu.com/item/%E8%BF%90%E7%AE%97%E7%AC%A6%E4%BC%98%E5%85%88%E7%BA%A7/4752611" target="_blank">完整运算符优先级</a></p></blockquote><h2 id="h2-2">实验解答</h2><pre><code class="language-c">int bitXor(int x, int y) {
-  return ~(x&y)&~(~x&~y);
+    <div class="header-navigator"><ul><li><a href="#h1-0">datalab</a><ul><li><a href="#h2-1">前言</a></li></ul><ul><li><a href="#h2-2">实验解答</a></li></ul><ul><li><a href="#h2-3">编译运行</a></li></ul></li></ul></div><div class='markdown-body'><h1 id="h1-0">datalab</h1><h2 id="h2-1">前言</h2><pre><code class="language-bash">tar xvf datalab-handout.tar</code></pre><p>解压缩之后可以看到本次实验使用的是gcc工具,打开Makefile文件可以看到使用了-m32进行了编译</p><p>所以如果在编译的时候报错了还需要安装32位的gcc编译器</p><pre><code class="language-bash">sudo apt-get install gcc-multilib</code></pre><p>位运算运算符优先级</p><table><tr><th>运算符</th><th>优先级</th></tr><tr><td style="text-align:center">                ()</td><td style="text-align:center">                1</td></tr><tr><td style="text-align:center">                -(单目) ! ~</td><td style="text-align:center">                2</td></tr><tr><td style="text-align:center">                * / %</td><td style="text-align:center">                3</td></tr><tr><td style="text-align:center">                + -</td><td style="text-align:center">                4</td></tr><tr><td style="text-align:center">                &lt;&lt; &gt;&gt;</td><td style="text-align:center">                5</td></tr><tr><td style="text-align:center">                &gt; &gt;= &lt; &lt;=</td><td style="text-align:center">                6</td></tr><tr><td style="text-align:center">                == !=</td><td style="text-align:center">                7</td></tr><tr><td style="text-align:center">                &amp;</td><td style="text-align:center">                8</td></tr><tr><td style="text-align:center">                ^</td><td style="text-align:center">                9</td></tr><tr><td style="text-align:center">                |</td><td style="text-align:center">                10</td></tr></table><blockquote><p><a href="https://baike.baidu.com/item/%E8%BF%90%E7%AE%97%E7%AC%A6%E4%BC%98%E5%85%88%E7%BA%A7/4752611" target="_blank">完整运算符优先级</a></p></blockquote><h2 id="h2-2">实验解答</h2><pre><code class="language-c">int bitXor(int x, int y) {
+  return ~(x&amp;y)&amp;~(~x&amp;~y);
 }
 /*
- * tmin - return minimum two's complement integer
- Legal ops: ! ~ & ^ | + &lt;&lt; &gt;&gt;
+ * tmin - return minimum two&#x27;s complement integer
+ Legal ops: ! ~ &amp; ^ | + &lt;&lt; &gt;&gt;
  Max ops: 4
  Rating: 1
  */
@@ -28,32 +28,32 @@ int tmin(void) {
 }
 //2
 /*
- * isTmax - returns 1 if x is the maximum, two's complement number,
+ * isTmax - returns 1 if x is the maximum, two&#x27;s complement number,
  and 0 otherwise
- Legal ops: ! ~ & ^ | +
+ Legal ops: ! ~ &amp; ^ | +
  Max ops: 10
  Rating: 1
  */
 int isTmax(int x) {
-    return !((~(x+1)^x))&!!(x+1);
+    return !((~(x+1)^x))&amp;!!(x+1);
 }
 /*
  * allOddBits - return 1 if all odd-numbered bits in word set to 1
  where bits are numbered from 0 (least significant) to 31 (most significant)
  Examples allOddBits(0xFFFFFFFD) = 0, allOddBits(0xAAAAAAAA) = 1
- Legal ops: ! ~ & ^ | + &lt;&lt; &gt;&gt;
+ Legal ops: ! ~ &amp; ^ | + &lt;&lt; &gt;&gt;
  Max ops: 12
  Rating: 2
  */
 int allOddBits(int x) {
     int mask = 0xaa | 0xaa &lt;&lt; 8;
     mask = mask | mask &lt;&lt; 16;
-    return !((x&mask)^mask);
+    return !((x&amp;mask)^mask);
 }
 /*
  * negate - return -x
  Example: negate(1) = -1.
- Legal ops: ! ~ & ^ | + &lt;&lt; &gt;&gt;
+ Legal ops: ! ~ &amp; ^ | + &lt;&lt; &gt;&gt;
  Max ops: 5
  Rating: 2
  */
@@ -62,74 +62,74 @@ int negate(int x) {
 }
 //3
 /*
- * isAsciiDigit - return 1 if 0x30 &lt;= x &lt;= 0x39 (ASCII codes for characters '0' to '9')
+ * isAsciiDigit - return 1 if 0x30 &lt;= x &lt;= 0x39 (ASCII codes for characters &#x27;0&#x27; to &#x27;9&#x27;)
  Example: isAsciiDigit(0x35) = 1.
  isAsciiDigit(0x3a) = 0.
  isAsciiDigit(0x05) = 0.
- Legal ops: ! ~ & ^ | + &lt;&lt; &gt;&gt;
+ Legal ops: ! ~ &amp; ^ | + &lt;&lt; &gt;&gt;
  Max ops: 15
  Rating: 3
  */
 int isAsciiDigit(int x) {
     int first_match = !(x&gt;&gt;4^3);
-    int second_match = (~0xa+1+(x&0xf))&gt;&gt;31&1;
-    return first_match & second_match;
+    int second_match = (~0xa+1+(x&amp;0xf))&gt;&gt;31&amp;1;
+    return first_match &amp; second_match;
 }
 /*
  * conditional - same as x ? y : z
  Example: conditional(2,4,5) = 4
- Legal ops: ! ~ & ^ | + &lt;&lt; &gt;&gt;
+ Legal ops: ! ~ &amp; ^ | + &lt;&lt; &gt;&gt;
  Max ops: 16
  Rating: 3
  */
 int conditional(int x, int y, int z) {
     int mask = !x + ~0;
-    return (mask & y) | (~mask &z);
+    return (mask &amp; y) | (~mask &amp;z);
 }
 /*
  * isLessOrEqual - if x &lt;= y  then return 1, else return 0
  Example: isLessOrEqual(4,5) = 1.
- Legal ops: ! ~ & ^ | + &lt;&lt; &gt;&gt;
+ Legal ops: ! ~ &amp; ^ | + &lt;&lt; &gt;&gt;
  Max ops: 24
  Rating: 3
  */
 int isLessOrEqual(int x, int y) {
     int judge = !((y+~x+1)&gt;&gt;31);
     int same_signal = !((x^y)&gt;&gt;31);
-    int x_neg_y_pos = (x&gt;&gt;31)&!(y&gt;&gt;31);
-    return x_neg_y_pos | (same_signal & judge);
+    int x_neg_y_pos = (x&gt;&gt;31)&amp;!(y&gt;&gt;31);
+    return x_neg_y_pos | (same_signal &amp; judge);
 }
 //4
 /*
  * logicalNeg - implement the ! operator, using all of
  the legal operators except !
  Examples: logicalNeg(3) = 0, logicalNeg(0) = 1
- Legal ops: ~ & ^ | + &lt;&lt; &gt;&gt;
+ Legal ops: ~ &amp; ^ | + &lt;&lt; &gt;&gt;
  Max ops: 12
  Rating: 4
  */
 int logicalNeg(int x) {
-    int a = (x&(~x+1));
+    int a = (x&amp;(~x+1));
     int b = a + ~0;
     int c = b &gt;&gt; 31;
     return ~c + 1;
 }
 /* howManyBits - return the minimum number of bits required to represent x in
- two's complement
+ two&#x27;s complement
  Examples: howManyBits(12) = 5
  howManyBits(298) = 10
  howManyBits(-5) = 4
  howManyBits(0)  = 1
  howManyBits(-1) = 1
  howManyBits(0x80000000) = 32
- Legal ops: ! ~ & ^ | + &lt;&lt; &gt;&gt;
+ Legal ops: ! ~ &amp; ^ | + &lt;&lt; &gt;&gt;
  Max ops: 90
  Rating: 4
  */
 int howManyBits(int x) {
     int b16,b8,b4,b2,b1,b0;
     int flag = x&gt;&gt;31;
-    x = (flag&~x) | (~flag&x); //x为非正数则不变 ,x 为负数 则相当于按位取反
+    x = (flag&amp;~x) | (~flag&amp;x); //x为非正数则不变 ,x 为负数 则相当于按位取反
     b16 = !!(x&gt;&gt;16) &lt;&lt;4; //如果高16位不为0,则我们让b16=16
     x&gt;&gt;=b16; //如果高16位不为0 则我们右移动16位 来看高16位的情况
     //下面过程基本类似
@@ -148,30 +148,30 @@ int howManyBits(int x) {
 /*
  * floatScale2 - Return bit-level equivalent of expression 2*f for
  floating point argument f.
- Both the argument and result are passed as unsigned int's, but
+ Both the argument and result are passed as unsigned int&#x27;s, but
  they are to be interpreted as the bit-level representation of
  single-precision floating point values.
  When argument is NaN, return argument
- Legal ops: Any integer/unsigned operations incl. ||, &&. also if, while
+ Legal ops: Any integer/unsigned operations incl. ||, &amp;&amp;. also if, while
  Max ops: 30
  Rating: 4
  */
 unsigned floatScale2(unsigned uf) {
     int exp_mask = 0x7f800000;
-    int exp = (uf&exp_mask)&gt;&gt;23;
+    int exp = (uf&amp;exp_mask)&gt;&gt;23;
     int frac_mask = 0x7fffff;
-    int frac = uf & frac_mask;
+    int frac = uf &amp; frac_mask;
     if (exp == 0) {
-        if (frac&gt;&gt;23&1) {
+        if (frac&gt;&gt;23&amp;1) {
             frac = frac * 2 - 0x7fffff;
         } else {
             frac = frac &lt;&lt; 1;
         }
-        return (uf & ~frac_mask) | frac;
+        return (uf &amp; ~frac_mask) | frac;
     } else if (exp == 255) {
         return uf;
     } else {
-        return (uf & ~exp_mask) | (exp+1)&lt;&lt;23;
+        return (uf &amp; ~exp_mask) | (exp+1)&lt;&lt;23;
     }
 }
 /*
@@ -182,16 +182,16 @@ unsigned floatScale2(unsigned uf) {
  single-precision floating point value.
  Anything out of range (including NaN and infinity) should return
  0x80000000u.
- Legal ops: Any integer/unsigned operations incl. ||, &&. also if, while
+ Legal ops: Any integer/unsigned operations incl. ||, &amp;&amp;. also if, while
  Max ops: 30
  Rating: 4
  */
 int floatFloat2Int(unsigned uf) {
     int exp_mask = 0x7f800000;
     int frac_mask = 0x7fffff;
-    int exp = (uf & exp_mask)&gt;&gt;23;
-    int frac = uf & frac_mask;
-    int signal = uf&gt;&gt;31&1;
+    int exp = (uf &amp; exp_mask)&gt;&gt;23;
+    int frac = uf &amp; frac_mask;
+    int signal = uf&gt;&gt;31&amp;1;
     int bias;
     int ans;
     if (exp &lt; 127) {
@@ -200,7 +200,7 @@ int floatFloat2Int(unsigned uf) {
         return 0x80000000;
     } else {
         if (exp==127+31){
-            if (frac==0 && signal == 1) {
+            if (frac==0 &amp;&amp; signal == 1) {
                 return 0x80000000;
             } else {
                 return 0x80000000;
@@ -225,14 +225,14 @@ int floatFloat2Int(unsigned uf) {
  If the result is too small to be represented as a denorm, return
  0. If too large, return +INF.
  *
- Legal ops: Any integer/unsigned operations incl. ||, &&. Also if, while
+ Legal ops: Any integer/unsigned operations incl. ||, &amp;&amp;. Also if, while
  Max ops: 30
  Rating: 4
  */
 unsigned floatPower2(int x) {
     int frac, exp;
     if (x &lt; -149) return 0;
-    else if (x &gt;= -149 && x &lt;= -127) {
+    else if (x &gt;= -149 &amp;&amp; x &lt;= -127) {
         frac = x+149;
         return 1 &lt;&lt; frac;
     } else if (x&lt;128) {
