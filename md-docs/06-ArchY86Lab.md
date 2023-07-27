@@ -1,7 +1,7 @@
 
-# ArchLab
+# ArchY86Lab
 
-本节来处理
+相关的前置知识点在 05-ArchLab 中已经介绍过了, 本节着重介绍实验解答部分
 
 ## 前言
 
@@ -312,6 +312,8 @@ Changes to memory:
 
 ![20230721133649](https://raw.githubusercontent.com/learner-lu/picbed/master/20230721133649.png)
 
+参考其他指令的六个阶段, 我们可以将 iaddq 指令对应的部分仿写出来, 如下所示
+
 |阶段|iaddq V, rB|
 |:--:|:--:|
 |取指|icode:ifun ⟵ M1[PC] <br/> rA:rB ⟵ M1[PC+1] <br/> valC ⟵ M8[PC+2] <br/> valP ⟵ PC+10|
@@ -321,8 +323,64 @@ Changes to memory:
 |写回|R[rB] ⟵ valE|
 |更新PC|PC ⟵ valP|
 
-![20230721144008](https://raw.githubusercontent.com/learner-lu/picbed/master/20230721144008.png)
+> 其中 iaddq 涉及到立即数与寄存器值相加, 与 OPq 类似还需要设置 CC
+
+接下来完成 seq-full.hcl 中的部分, 这部分照葫芦画瓢即可, 源文件中的变量名和注释已经给了很好的参考, 下面简单解释一下
+
+42 行定义了 `wordsig IIADDQ	'I_IADDQ'` 为本次需要添加的 I_IADDQ 指令名为 `IIADDQ`
+
+Fetch 阶段中 instr_valid 表示指令是否合法, need_regids 是否需要寄存器, need_valC 是否需要立即数. iaddq 都需要所以都添加进去
+
+![20230727154034](https://raw.githubusercontent.com/learner-lu/picbed/master/20230727154034.png)
+
+Decode 阶段 srcB 确定将哪个寄存器取值并放入 srcB, dstE 确定将计算得到的 valE 写回哪个寄存器
+
+> 这里的 IRRMOVQ 对应的 & Cnd 没有理解什么意思...
+
+![20230727154329](https://raw.githubusercontent.com/learner-lu/picbed/master/20230727154329.png)
+
+Execute 阶段为 `valE ⟵ valB + valC`, 所以加入对应的位置, 以及需要设置 CC 的 set_cc
+
+![20230727154738](https://raw.githubusercontent.com/learner-lu/picbed/master/20230727154738.png)
+
+最后没有访存以及不需要修改更新PC的部分
+
+使用 `make VERSION=full` 执行编译会报错, 解决办法为修改 Makefile
+
+![20230727150404](https://raw.githubusercontent.com/learner-lu/picbed/master/20230727150404.png)
+
+```Makefile
+# 20 行改为
+TKINC=-isystem /usr/include/tcl8.6
+# 26 行改为
+CFLAGS=-Wall -O2 -DUSE_INTERP_RESULT
+```
+
+注释掉 seq/ssim.c 的 844 845 行以及 pipe/psim.c 806、807 行
+
+```c
+/* Hack for SunOS */
+// extern int matherr();
+// int *tclDummyMathPtr = (int *) matherr;
+```
+
+接下来就没有问题了, 依次执行如下代码编译测试
+
+```bash
+make VERSION=full
+(cd ../y86-code; make testssim)
+(cd ../ptest; make SIM=../seq/ssim)
+(cd ../ptest; make SIM=../seq/ssim TFLAGS=-i)
+```
+
+![20230727151230](https://raw.githubusercontent.com/learner-lu/picbed/master/20230727151230.png)
 
 ## 参考
 
 - [deconx Lab04-Architecture_Lab](https://deconx.cn/docs/system/CSAPP/Lab04-Architecture_Lab)
+- [【深入理解计算机系统】CSAPP-实验四:ArchLab全网最详细](https://blog.csdn.net/qq_42234461/article/details/108720264)
+- [CSAPP : Arch Lab 解题报告](https://zhuanlan.zhihu.com/p/36793761)
+- [CSAPP:ArchLab](https://zhuanlan.zhihu.com/p/559593472)
+- [CSAPP-archlab](https://mcginn7.github.io/2020/02/21/CSAPP-archlab/)
+- [littlecsd csapp-Archlab](https://littlecsd.net/2019/01/18/csapp-Archlab/)
+- [gitbook hansimov](https://hansimov.gitbook.io/csapp/labs/arch-lab)

@@ -16,6 +16,8 @@ csapplab 实验笔记: [csapplab document](https://luzhixing12345.github.io/csap
 
 环境配置一直是令人恼火的,有大佬写过相关说明做好了docker镜像,这里直接引用他们的文章,如果配置环境吃力的朋友可以看看
 
+> 如果尚未安装过 docker, 请参考 [docker基本命令](https://luzhixing12345.github.io/2022/11/08/%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE/docker%E5%9F%BA%E6%9C%AC%E5%91%BD%E4%BB%A4/)
+
 - [CSAPP一键环境配置、完成8个lab总结](https://zhuanlan.zhihu.com/p/505497911)
 - [CSAPP:Lab0 -Docker搭建纯净Linux环境](https://zhuanlan.zhihu.com/p/340283308)
 - [CSAPP:Lab1 -DataLab 超详解](https://zhuanlan.zhihu.com/p/339047608)
