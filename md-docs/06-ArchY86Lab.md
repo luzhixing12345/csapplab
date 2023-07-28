@@ -375,6 +375,50 @@ make VERSION=full
 
 ![20230727151230](https://raw.githubusercontent.com/learner-lu/picbed/master/20230727151230.png)
 
+## PartC
+
+修改 Makefile 和 sim.h 以通过编译
+
+```Makefile
+TKINC=-isystem /usr/include/tcl8.6
+
+# Modify these two lines to choose your compiler and compile time
+# flags.
+
+CC=gcc
+CFLAGS=-Wall -O2 -DUSE_INTERP_RESULT
+```
+
+```c
+// pipe/sim.h 47 行 
+// pipe_ptr pc_state, if_id_state, id_ex_state, ex_mem_state, mem_wb_state;
+```
+
+```bash
+make VERSION=full
+```
+
+```bash
+./correctness.pl
+```
+
+```bash
+# ./gen-driver.pl -f ncopy.ys -n K -rc > driver.ys
+./gen-driver.pl -f ncopy.ys -n 64 -rc > driver.ys
+make driver.yo
+../misc/yis driver.yo
+```
+
+```bash
+(cd ../y86-code; make testpsim)
+(cd ../ptest; make SIM=../pipe/psim TFLAGS=-i)
+./correctness.pl -p
+```
+
+```bash
+./benchmark.pl
+```
+
 ## 参考
 
 - [deconx Lab04-Architecture_Lab](https://deconx.cn/docs/system/CSAPP/Lab04-Architecture_Lab)
