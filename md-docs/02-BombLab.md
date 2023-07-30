@@ -1,7 +1,7 @@
 
 # BombLab
 
-> [《深入理解计算机系统》Bomb Lab实验解析](https://earthaa.github.io/2020/01/12/CSAPP-Bomblab/)
+> [<深入理解计算机系统>Bomb Lab实验解析](https://earthaa.github.io/2020/01/12/CSAPP-Bomblab/)
 >
 > [CS:APP - Bomb Lab](https://hakula.xyz/posts/note/csapp/bomb-lab/)
 
@@ -79,10 +79,8 @@ return -> %rax
 浏览 `bomb.c` 可以看到它在开头引用了
 
 ```c
-...
 #include "support.h"
 #include "phases.h"
-...
 ```
 
 所以可以看出 `bomb.c` 只是源文件的一部分, `bomb` 是由多个文件一起编译得到的,提供 bomb.c 文件实际上是为了给读者一个清晰的bomb lab思路
@@ -324,7 +322,7 @@ phase_4的主体就是 `func4` 这个函数
 
 ```c
 int func4(int x, int y, int z) {
-  ...     // edi   esi   edx
+  // edi   esi   edx
 }
 ```
 
@@ -386,7 +384,7 @@ int func4(int x, int y, int z) {
 
 最开始这里使用了 stack canary(栈金丝雀)用来保护栈
 
-用途是确保 `0x18(%rsp)` 的数值在函数前后没有发生改动,如果发生改动则执行 `<__stack_chk_fail@plt>` 调用系统函数 __stack_chk_fail 跳出，从而防止栈溢出
+用途是确保 `0x18(%rsp)` 的数值在函数前后没有发生改动,如果发生改动则执行 `<__stack_chk_fail@plt>` 调用系统函数 __stack_chk_fail 跳出,从而防止栈溢出
 
 简单来说就是,防止输入的字符串过长导致栈溢出
 
@@ -760,8 +758,7 @@ bomb提供了一个参数用于从文件中读取内容,所以每一关完成之
 
 ```c
 int fun7(long *p, long x) {
-  ...
-  return ...
+  return;
 }
 ```
 
@@ -800,7 +797,7 @@ int fun7(long *p, long x) {
 int fun7(long *p, long x) {
   if (p == 0) return -1;
   if (*p <= x) {
-    return 2*fun7(p+16,x)+1 // 向右
+    return 2*fun7(p+16,x)+1; // 向右
   } else {
     if (*p == x) return 0;
     else return 2*fun7(p+8,x); // 向左

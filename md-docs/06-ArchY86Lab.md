@@ -106,6 +106,8 @@ Changes to memory:
 ```
 
 > 汇编代码结尾需要有一行换行, 不然会yas的时候产生警告: `Missing end-of-line on final line`
+>
+> [csapplab sum.ys](https://github.com/luzhixing12345/csapplab/blob/main/05_arch_lab/sim/misc/sum.ys)
 
 ### rsum.ys
 
@@ -210,7 +212,9 @@ Changes to memory:
 
 最后结果 `0xcba` 也如预期所料
 
-###
+> [csapplab rsum.ys](https://github.com/luzhixing12345/csapplab/blob/main/05_arch_lab/sim/misc/rsum.ys)
+
+### copy_block.ys
 
 ```c
 /* copy_block - Copy src to dest and return xor checksum of src */
@@ -304,7 +308,11 @@ Changes to memory:
 
 结果显示 result 的值是 src 的中的异或结果 `0xcba`, 并且原先 dest 的地址中 0x38 0x40 0x48 也被修改为了 src 中对应的值
 
+> [csapplab copy_block.ys](https://github.com/luzhixing12345/csapplab/blob/main/05_arch_lab/sim/misc/copy_block.ys)
+
 ## PartB
+
+> [csapplab seq-full.hcl](https://github.com/luzhixing12345/csapplab/blob/main/05_arch_lab/sim/seq/seq-full.hcl)
 
 第二部分在 sim/seq 下完成, 在原有指令集中添加一个iaddq指令, 实现立即数+寄存器
 
@@ -376,6 +384,10 @@ make VERSION=full
 ![20230727151230](https://raw.githubusercontent.com/learner-lu/picbed/master/20230727151230.png)
 
 ## PartC
+
+> [csapplab pipe-full.hcl](https://github.com/luzhixing12345/csapplab/blob/main/05_arch_lab/sim/pipe/pipe-full.hcl)
+>
+> [csapplab ncopy.ys](https://github.com/luzhixing12345/csapplab/blob/main/05_arch_lab/sim/pipe/ncopy.ys)
 
 修改 Makefile 和 sim.h 以通过编译
 

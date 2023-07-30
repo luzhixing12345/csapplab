@@ -356,13 +356,13 @@ TEST_TRANS_RESULTS=1:343
 
 - 写命中:
 
-  - write-through：直接写内存
-  - write-back：先写Cache，当该行被替换时再写内存。此时需要一个额外的dirty位
+  - write-through:直接写内存
+  - write-back:先写Cache,当该行被替换时再写内存.此时需要一个额外的dirty位
   
 - 写不命中
 
-  - write-allocate：将内存数据读入Cache中，再写Cache
-  - no-write-allocate：直接写内存
+  - write-allocate:将内存数据读入Cache中,再写Cache
+  - no-write-allocate:直接写内存
 
 本题的操作方式是写命中与否都会使用Cache缓存B的值,所以第一次读取B数组的值的时候也会产生一次miss
 
@@ -453,9 +453,9 @@ TEST_TRANS_RESULTS=1:287
 - 在 A 访问第二行之前不让 B 访问第二行
 - 在 A 访问第二行之后不让 B 访问第二行
 
-后者不可能做到因为B一定是要写入的,所以我们考虑延迟B访问第二行的时间,也就是处理第一列的时候. 所以我们换一个思路，**能否等 A 的下一行的元素访问完了再转置？**
+后者不可能做到因为B一定是要写入的,所以我们考虑延迟B访问第二行的时间,也就是处理第一列的时候. 所以我们换一个思路,**能否等 A 的下一行的元素访问完了再转置?**
 
-因为自由变量是有限的(不然直接256个变量上去了),所以我们可以将 A 的元素暂存在 B 的第一行，等到下一行读到变量里再访问 B 的下一行. 当i==j的时候手动交换8x8区域内的元素,利用八个变量交替读取A的每一行,并保存到B的行中,然后在每一列中做对应的转置处理
+因为自由变量是有限的(不然直接256个变量上去了),所以我们可以将 A 的元素暂存在 B 的第一行,等到下一行读到变量里再访问 B 的下一行. 当i==j的时候手动交换8x8区域内的元素,利用八个变量交替读取A的每一行,并保存到B的行中,然后在每一列中做对应的转置处理
 
 ```c
 void transpose_submit(int M, int N, int A[N][M], int B[M][N])
@@ -534,43 +534,46 @@ TEST_TRANS_RESULTS=1:259
 一种直观的想法是仅仅将数组大小改为4x4
 
 ```c
+if (M == 32) {
+    // ...
+}
 else if (M == 64) {
-        int i, j, k, l;
-        int t0, t1, t2, t3;
-        for (i = 0; i < N; i += 4) {
-            for (j = 0; j < M; j += 4) {
-                if (i != j) {
-                    for (k = i; k < i + 4; k++) {
-                        for (l = j; l < j + 4; l++) {
-                            B[l][k] = A[k][l];
-                        }
+    int i, j, k, l;
+    int t0, t1, t2, t3;
+    for (i = 0; i < N; i += 4) {
+        for (j = 0; j < M; j += 4) {
+            if (i != j) {
+                for (k = i; k < i + 4; k++) {
+                    for (l = j; l < j + 4; l++) {
+                        B[l][k] = A[k][l];
                     }
-                } else {
-                    for (k = i; k < i + 4; k++) {
-                        t0 = A[k][j];
-                        t1 = A[k][j + 1];
-                        t2 = A[k][j + 2];
-                        t3 = A[k][j + 3];
+                }
+            } else {
+                for (k = i; k < i + 4; k++) {
+                    t0 = A[k][j];
+                    t1 = A[k][j + 1];
+                    t2 = A[k][j + 2];
+                    t3 = A[k][j + 3];
 
-                        B[k][j] = t0;
-                        B[k][j + 1] = t1;
-                        B[k][j + 2] = t2;
-                        B[k][j + 3] = t3;
-                    }
+                    B[k][j] = t0;
+                    B[k][j + 1] = t1;
+                    B[k][j + 2] = t2;
+                    B[k][j + 3] = t3;
+                }
 
-                    for (k = i; k < i + 4; k++) {
-                        for (l = j + (k - i + 1); l < j + 4; l++) {
-                            if (k != l) {
-                                t0 = B[k][l];
-                                B[k][l] = B[l][k];
-                                B[l][k] = t0;
-                            }
+                for (k = i; k < i + 4; k++) {
+                    for (l = j + (k - i + 1); l < j + 4; l++) {
+                        if (k != l) {
+                            t0 = B[k][l];
+                            B[k][l] = B[l][k];
+                            B[l][k] = t0;
                         }
                     }
                 }
             }
         }
     }
+}
 ```
 
 ```bash
@@ -677,185 +680,188 @@ TEST_TRANS_RESULTS=1:1747
    ![asdsqqqa](https://raw.githubusercontent.com/learner-lu/picbed/master/asdsqqqa.gif)
 
 ```c
- else if (M == 64) {
-        int i, j, k, l;
-        int a0, a1, a2, a3, a4, a5, a6, a7;
+if (M == 32) {
+    // ...
+}
+else if (M == 64) {
+  int i, j, k, l;
+  int a0, a1, a2, a3, a4, a5, a6, a7;
 
-        // 优先处理对角线block
-        for (j = 0; j < N; j += 8) {
-            
-            // 对于第一行的block，借用矩阵选择第一行第二个block
-            // 其余都选择每一行的第一个block
-            if (j == 0)
-                i = 8;
-            else
-                i = 0;
+  // 优先处理对角线block
+  for (j = 0; j < N; j += 8) {
+      
+      // 对于第一行的block,借用矩阵选择第一行第二个block
+      // 其余都选择每一行的第一个block
+      if (j == 0)
+          i = 8;
+      else
+          i = 0;
 
-            // 1. 将A矩阵下方4x8移动到借用矩阵位置 - 上半部分
-            for (k = j; k < j + 4; ++k) {
-                a0 = A[k + 4][j + 0];
-                a1 = A[k + 4][j + 1];
-                a2 = A[k + 4][j + 2];
-                a3 = A[k + 4][j + 3];
-                a4 = A[k + 4][j + 4];
-                a5 = A[k + 4][j + 5];
-                a6 = A[k + 4][j + 6];
-                a7 = A[k + 4][j + 7];
+      // 1. 将A矩阵下方4x8移动到借用矩阵位置 - 上半部分
+      for (k = j; k < j + 4; ++k) {
+          a0 = A[k + 4][j + 0];
+          a1 = A[k + 4][j + 1];
+          a2 = A[k + 4][j + 2];
+          a3 = A[k + 4][j + 3];
+          a4 = A[k + 4][j + 4];
+          a5 = A[k + 4][j + 5];
+          a6 = A[k + 4][j + 6];
+          a7 = A[k + 4][j + 7];
 
-                B[k][i + 0] = a0;
-                B[k][i + 1] = a1;
-                B[k][i + 2] = a2;
-                B[k][i + 3] = a3;
-                B[k][i + 4] = a4;
-                B[k][i + 5] = a5;
-                B[k][i + 6] = a6;
-                B[k][i + 7] = a7;
-            }
+          B[k][i + 0] = a0;
+          B[k][i + 1] = a1;
+          B[k][i + 2] = a2;
+          B[k][i + 3] = a3;
+          B[k][i + 4] = a4;
+          B[k][i + 5] = a5;
+          B[k][i + 6] = a6;
+          B[k][i + 7] = a7;
+      }
 
-            // 2. 借用矩阵内部两个4x4转置
-            for (k = 0; k < 4; ++k) {
-                for (l = k + 1; l < 4; ++l) {
-                    a0 = B[j + k][i + l];
-                    B[j + k][i + l] = B[j + l][i + k];
-                    B[j + l][i + k] = a0;
+      // 2. 借用矩阵内部两个4x4转置
+      for (k = 0; k < 4; ++k) {
+          for (l = k + 1; l < 4; ++l) {
+              a0 = B[j + k][i + l];
+              B[j + k][i + l] = B[j + l][i + k];
+              B[j + l][i + k] = a0;
 
-                    a0 = B[j + k][i + l + 4];
-                    B[j + k][i + l + 4] = B[j + l][i + k + 4];
-                    B[j + l][i + k + 4] = a0;
-                }
-            }
+              a0 = B[j + k][i + l + 4];
+              B[j + k][i + l + 4] = B[j + l][i + k + 4];
+              B[j + l][i + k + 4] = a0;
+          }
+      }
 
-            // 3. 将A上方4x8移动到B上方
-            for (k = j; k < j + 4; ++k) {
-                a0 = A[k][j + 0];
-                a1 = A[k][j + 1];
-                a2 = A[k][j + 2];
-                a3 = A[k][j + 3];
-                a4 = A[k][j + 4];
-                a5 = A[k][j + 5];
-                a6 = A[k][j + 6];
-                a7 = A[k][j + 7];
+      // 3. 将A上方4x8移动到B上方
+      for (k = j; k < j + 4; ++k) {
+          a0 = A[k][j + 0];
+          a1 = A[k][j + 1];
+          a2 = A[k][j + 2];
+          a3 = A[k][j + 3];
+          a4 = A[k][j + 4];
+          a5 = A[k][j + 5];
+          a6 = A[k][j + 6];
+          a7 = A[k][j + 7];
 
-                B[k][j + 0] = a0;
-                B[k][j + 1] = a1;
-                B[k][j + 2] = a2;
-                B[k][j + 3] = a3;
-                B[k][j + 4] = a4;
-                B[k][j + 5] = a5;
-                B[k][j + 6] = a6;
-                B[k][j + 7] = a7;
-            }
+          B[k][j + 0] = a0;
+          B[k][j + 1] = a1;
+          B[k][j + 2] = a2;
+          B[k][j + 3] = a3;
+          B[k][j + 4] = a4;
+          B[k][j + 5] = a5;
+          B[k][j + 6] = a6;
+          B[k][j + 7] = a7;
+      }
 
-            // 4. B矩阵上方两个4x4转置
-            for (k = j; k < j + 4; ++k) {
-                for (l = k + 1; l < j + 4; ++l) {
-                    a0 = B[k][l];
-                    B[k][l] = B[l][k];
-                    B[l][k] = a0;
+      // 4. B矩阵上方两个4x4转置
+      for (k = j; k < j + 4; ++k) {
+          for (l = k + 1; l < j + 4; ++l) {
+              a0 = B[k][l];
+              B[k][l] = B[l][k];
+              B[l][k] = a0;
 
-                    a0 = B[k][l + 4];
-                    B[k][l + 4] = B[l][k + 4];
-                    B[l][k + 4] = a0;
-                }
-            }
+              a0 = B[k][l + 4];
+              B[k][l + 4] = B[l][k + 4];
+              B[l][k + 4] = a0;
+          }
+      }
 
-            // 5. B矩阵的右上和转置矩阵的左上交换
-            for (k = 0; k < 4; ++k) {
-                a0 = B[j + k][j + 4];
-                a1 = B[j + k][j + 5];
-                a2 = B[j + k][j + 6];
-                a3 = B[j + k][j + 7];
+      // 5. B矩阵的右上和转置矩阵的左上交换
+      for (k = 0; k < 4; ++k) {
+          a0 = B[j + k][j + 4];
+          a1 = B[j + k][j + 5];
+          a2 = B[j + k][j + 6];
+          a3 = B[j + k][j + 7];
 
-                B[j + k][j + 4] = B[j + k][i + 0];
-                B[j + k][j + 5] = B[j + k][i + 1];
-                B[j + k][j + 6] = B[j + k][i + 2];
-                B[j + k][j + 7] = B[j + k][i + 3];
+          B[j + k][j + 4] = B[j + k][i + 0];
+          B[j + k][j + 5] = B[j + k][i + 1];
+          B[j + k][j + 6] = B[j + k][i + 2];
+          B[j + k][j + 7] = B[j + k][i + 3];
 
-                B[j + k][i + 0] = a0;
-                B[j + k][i + 1] = a1;
-                B[j + k][i + 2] = a2;
-                B[j + k][i + 3] = a3;
-            }
+          B[j + k][i + 0] = a0;
+          B[j + k][i + 1] = a1;
+          B[j + k][i + 2] = a2;
+          B[j + k][i + 3] = a3;
+      }
 
-            // 6. 将借用矩阵移动到B矩阵下方
-            for (k = 0; k < 4; ++k) {
-                B[j + k + 4][j + 0] = B[j + k][i + 0];
-                B[j + k + 4][j + 1] = B[j + k][i + 1];
-                B[j + k + 4][j + 2] = B[j + k][i + 2];
-                B[j + k + 4][j + 3] = B[j + k][i + 3];
-                B[j + k + 4][j + 4] = B[j + k][i + 4];
-                B[j + k + 4][j + 5] = B[j + k][i + 5];
-                B[j + k + 4][j + 6] = B[j + k][i + 6];
-                B[j + k + 4][j + 7] = B[j + k][i + 7];
-            }
+      // 6. 将借用矩阵移动到B矩阵下方
+      for (k = 0; k < 4; ++k) {
+          B[j + k + 4][j + 0] = B[j + k][i + 0];
+          B[j + k + 4][j + 1] = B[j + k][i + 1];
+          B[j + k + 4][j + 2] = B[j + k][i + 2];
+          B[j + k + 4][j + 3] = B[j + k][i + 3];
+          B[j + k + 4][j + 4] = B[j + k][i + 4];
+          B[j + k + 4][j + 5] = B[j + k][i + 5];
+          B[j + k + 4][j + 6] = B[j + k][i + 6];
+          B[j + k + 4][j + 7] = B[j + k][i + 7];
+      }
 
-            // 处理非对角线block
-            for (i = 0; i < M; i += 8) {
-                if (i == j) {
-                    continue;
-                } else {
-                    // 1. 将A矩阵上半部分移动到B上半部分
-                    //    分为两块 分别转置
-                    for (k = i; k < i + 4; ++k) {
-                        a0 = A[k][j + 0];
-                        a1 = A[k][j + 1];
-                        a2 = A[k][j + 2];
-                        a3 = A[k][j + 3];
-                        a4 = A[k][j + 4];
-                        a5 = A[k][j + 5];
-                        a6 = A[k][j + 6];
-                        a7 = A[k][j + 7];
+      // 处理非对角线block
+      for (i = 0; i < M; i += 8) {
+          if (i == j) {
+              continue;
+          } else {
+              // 1. 将A矩阵上半部分移动到B上半部分
+              //    分为两块 分别转置
+              for (k = i; k < i + 4; ++k) {
+                  a0 = A[k][j + 0];
+                  a1 = A[k][j + 1];
+                  a2 = A[k][j + 2];
+                  a3 = A[k][j + 3];
+                  a4 = A[k][j + 4];
+                  a5 = A[k][j + 5];
+                  a6 = A[k][j + 6];
+                  a7 = A[k][j + 7];
 
-                        B[j + 0][k] = a0;
-                        B[j + 1][k] = a1;
-                        B[j + 2][k] = a2;
-                        B[j + 3][k] = a3;
-                        B[j + 0][k + 4] = a4;
-                        B[j + 1][k + 4] = a5;
-                        B[j + 2][k + 4] = a6;
-                        B[j + 3][k + 4] = a7;
-                    }
+                  B[j + 0][k] = a0;
+                  B[j + 1][k] = a1;
+                  B[j + 2][k] = a2;
+                  B[j + 3][k] = a3;
+                  B[j + 0][k + 4] = a4;
+                  B[j + 1][k + 4] = a5;
+                  B[j + 2][k + 4] = a6;
+                  B[j + 3][k + 4] = a7;
+              }
 
-                    // 2. B矩阵右上部分移动到B矩阵左下，转置
-                    //    A矩阵左下部分移动到B矩阵右上，转置
-                    for (l = j; l < j + 4; ++l) {
-                        a0 = A[i + 4][l];
-                        a1 = A[i + 5][l];
-                        a2 = A[i + 6][l];
-                        a3 = A[i + 7][l];
+              // 2. B矩阵右上部分移动到B矩阵左下,转置
+              //    A矩阵左下部分移动到B矩阵右上,转置
+              for (l = j; l < j + 4; ++l) {
+                  a0 = A[i + 4][l];
+                  a1 = A[i + 5][l];
+                  a2 = A[i + 6][l];
+                  a3 = A[i + 7][l];
 
-                        a4 = B[l][i + 4];
-                        a5 = B[l][i + 5];
-                        a6 = B[l][i + 6];
-                        a7 = B[l][i + 7];
+                  a4 = B[l][i + 4];
+                  a5 = B[l][i + 5];
+                  a6 = B[l][i + 6];
+                  a7 = B[l][i + 7];
 
-                        B[l][i + 4] = a0;
-                        B[l][i + 5] = a1;
-                        B[l][i + 6] = a2;
-                        B[l][i + 7] = a3;
+                  B[l][i + 4] = a0;
+                  B[l][i + 5] = a1;
+                  B[l][i + 6] = a2;
+                  B[l][i + 7] = a3;
 
-                        B[l + 4][i + 0] = a4;
-                        B[l + 4][i + 1] = a5;
-                        B[l + 4][i + 2] = a6;
-                        B[l + 4][i + 3] = a7;
-                    }
+                  B[l + 4][i + 0] = a4;
+                  B[l + 4][i + 1] = a5;
+                  B[l + 4][i + 2] = a6;
+                  B[l + 4][i + 3] = a7;
+              }
 
-                    // 3. A矩阵右下部分移动到B矩阵右下，转置
-                    for (k = i + 4; k < i + 8; ++k) {
-                        a0 = A[k][j + 4];
-                        a1 = A[k][j + 5];
-                        a2 = A[k][j + 6];
-                        a3 = A[k][j + 7];
+              // 3. A矩阵右下部分移动到B矩阵右下,转置
+              for (k = i + 4; k < i + 8; ++k) {
+                  a0 = A[k][j + 4];
+                  a1 = A[k][j + 5];
+                  a2 = A[k][j + 6];
+                  a3 = A[k][j + 7];
 
-                        B[j + 4][k] = a0;
-                        B[j + 5][k] = a1;
-                        B[j + 6][k] = a2;
-                        B[j + 7][k] = a3;
-                    }
-                }
-            }
-        }
-    }
+                  B[j + 4][k] = a0;
+                  B[j + 5][k] = a1;
+                  B[j + 6][k] = a2;
+                  B[j + 7][k] = a3;
+              }
+          }
+      }
+  }
+}
 ```
 
 ```bash
@@ -933,7 +939,7 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
         // 优先处理对角线block
         for (j = 0; j < N; j += 8) {
 
-            // 对于第一行的block，借用矩阵选择第一行第二个block
+            // 对于第一行的block,借用矩阵选择第一行第二个block
             // 其余都选择每一行的第一个block
             if (j == 0)
                 i = 8;
@@ -1065,8 +1071,8 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
                         B[j + 3][k + 4] = a7;
                     }
 
-                    // 2. B矩阵右上部分移动到B矩阵左下，转置
-                    //    A矩阵左下部分移动到B矩阵右上，转置
+                    // 2. B矩阵右上部分移动到B矩阵左下,转置
+                    //    A矩阵左下部分移动到B矩阵右上,转置
                     for (l = j; l < j + 4; ++l) {
                         a0 = A[i + 4][l];
                         a1 = A[i + 5][l];
@@ -1089,7 +1095,7 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
                         B[l + 4][i + 3] = a7;
                     }
 
-                    // 3. A矩阵右下部分移动到B矩阵右下，转置
+                    // 3. A矩阵右下部分移动到B矩阵右下,转置
                     for (k = i + 4; k < i + 8; ++k) {
                         a0 = A[k][j + 4];
                         a1 = A[k][j + 5];
@@ -1193,7 +1199,7 @@ Trans perf 61x67          10.0        10        1905
 - [CSAPP实验之cache lab](https://zhuanlan.zhihu.com/p/79058089)
 - [CSAPP - Cache Lab的更(最)优秀的解法](https://zhuanlan.zhihu.com/p/387662272)
 - [csapp-cachelab 详解](https://zhuanlan.zhihu.com/p/410662053)
-- [《深入理解计算机系统》配套实验：Cache Lab](https://zhuanlan.zhihu.com/p/33846811)
+- [<深入理解计算机系统>配套实验:Cache Lab](https://zhuanlan.zhihu.com/p/33846811)
 - https://www.cnblogs.com/liqiuhao/p/8026100.html
 - http://csapp.cs.cmu.edu/3e/waside/waside-blocking.pdf
 - http://www.cs.cmu.edu/afs/cs/academic/class/15213-f15/www/recitations/rec07.pdf
